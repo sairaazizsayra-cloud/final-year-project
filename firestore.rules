@@ -1,0 +1,218 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return userDoc().data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userRole() == 'admin';
+    }
+
+    function isRider() {
+      return isSignedIn() && userRole() == 'rider';
+    }
+
+    function isActiveUser() {
+      return isSignedIn() && userDoc().data.isActive == true;
+    }
+
+    function isValidOrderStatus(status) {
+      return status in [
+        'pending', 'confirmed', 'preparing', 'shipped',
+        'out_for_delivery', 'delivered', 'cancelled'
+      ];
+    }
+
+    // ── Users ────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+                    && request.resource.data.role == 'customer'
+                    && request.resource.data.email == request.auth.token.email
+                    && request.resource.data.isActive == true;
+      allow update: if isAdmin()
+                    || (isOwner(userId)
+                        && !request.resource.data.diff(resource.data).affectedKeys()
+                            .hasAny(['role', 'isActive']));
+      allow delete: if isAdmin();
+    }
+
+    // ── Admins (metadata only; role still lives on users) ─
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // manage via Console / Cloud Functions
+    }
+
+    // ── Categories ───────────────────────────────────────
+    match /categories/{categoryId} {
+      allow read: if resource.data.isActive == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── Products ─────────────────────────────────────────
+    match /products/{productId} {
+      allow read: if resource.data.isActive == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── Banners ──────────────────────────────────────────
+    match /banners/{bannerId} {
+      allow read: if resource.data.isActive == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── Cart (subcollection under user) ──────────────────
+    match /cart/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) && isActiveUser()) || isAdmin();
+
+      match /items/{itemId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if (isOwner(userId) && isActiveUser()) || isAdmin();
+      }
+    }
+
+    // ── Addresses ────────────────────────────────────────
+    match /addresses/{addressId} {
+      allow read: if isSignedIn()
+                  && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isActiveUser()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isActiveUser()
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Favorites ────────────────────────────────────────
+    match /favorites/{favoriteId} {
+      allow read: if isSignedIn()
+                  && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isActiveUser()
+                    && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+                    && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ── Orders ───────────────────────────────────────────
+    // Customers create; status changes prefer Cloud Functions / admin.
+    match /orders/{orderId} {
+      allow read: if isSignedIn()
+                  && (resource.data.userId == request.auth.uid
+                      || isAdmin()
+                      || (isRider() && resource.data.riderId == request.auth.uid));
+
+      allow create: if isActiveUser()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.orderStatus == 'pending'
+                    && request.resource.data.paymentStatus in ['pending', 'paid']
+                    && request.resource.data.items is list
+                    && request.resource.data.totalAmount is number
+                    && request.resource.data.totalAmount >= 0
+                    && request.resource.data.deliveryAddress is map;
+
+      allow update: if isAdmin()
+                    || (isRider()
+                        && resource.data.riderId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['orderStatus', 'updatedAt', 'statusHistory', 'deliveredAt'])
+                        && isValidOrderStatus(request.resource.data.orderStatus))
+                    || (isOwner(resource.data.userId)
+                        && resource.data.orderStatus == 'pending'
+                        && request.resource.data.orderStatus == 'cancelled'
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['orderStatus', 'updatedAt', 'statusHistory']));
+
+      allow delete: if false;
+    }
+
+    // ── Order items (optional denormalized collection) ───
+    match /orderItems/{itemId} {
+      allow read: if isSignedIn()
+                  && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isActiveUser()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Deliveries ───────────────────────────────────────
+    match /deliveries/{deliveryId} {
+      allow read: if isSignedIn()
+                  && (resource.data.userId == request.auth.uid
+                      || resource.data.riderId == request.auth.uid
+                      || isAdmin());
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+                    || (isRider()
+                        && resource.data.riderId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['status', 'notes', 'deliveredAt', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // ── Reviews ──────────────────────────────────────────
+    // New reviews start unapproved; only admin can flip isApproved.
+    match /reviews/{reviewId} {
+      allow read: if resource.data.isApproved == true || isAdmin()
+                  || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isActiveUser()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.rating is number
+                    && request.resource.data.rating >= 1
+                    && request.resource.data.rating <= 5
+                    && request.resource.data.isApproved == false
+                    && request.resource.data.comment is string;
+      allow update: if isAdmin()
+                    || (isSignedIn()
+                        && resource.data.userId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['comment', 'images', 'rating'])
+                        && request.resource.data.rating is number
+                        && request.resource.data.rating >= 1
+                        && request.resource.data.rating <= 5);
+      allow delete: if isAdmin()
+                    || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // ── Notifications ────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn()
+                  && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isSignedIn()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['isRead']);
+      allow create: if isAdmin(); // prefer Cloud Functions Admin SDK
+      allow delete: if isSignedIn()
+                    && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ── Payments ─────────────────────────────────────────
+    match /payments/{paymentId} {
+      allow read: if isSignedIn()
+                  && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false; // Cloud Functions only
+    }
+
+    // ── Coupons ──────────────────────────────────────────
+    match /coupons/{couponId} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.isActive == true);
+      allow write: if isAdmin();
+    }
+  }
+}

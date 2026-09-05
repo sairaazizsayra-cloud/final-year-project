@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "20117320928",
+    "project_id": "keychain-shop",
+    "storage_bucket": "keychain-shop.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20117320928:android:a469e98a7423c8f9324c85",
+        "android_client_info": {
+          "package_name": "com.keychainshop.keychain_shop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAffWWWd9Jo6DS5MTTNFF_h6LXef3v8gQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

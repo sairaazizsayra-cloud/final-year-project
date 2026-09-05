@@ -1,0 +1,54 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/o/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function underMaxSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5 MB
+    }
+
+    match /products/{productId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && underMaxSize();
+    }
+
+    match /categories/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && underMaxSize();
+    }
+
+    match /banners/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && underMaxSize();
+    }
+
+    match /profiles/{userId}.jpg {
+      allow read: if true;
+      allow write: if isSignedIn()
+                   && request.auth.uid == userId
+                   && isImage()
+                   && underMaxSize();
+    }
+
+    match /custom_keychains/{userId}/{fileName} {
+      allow read: if isSignedIn()
+                  && (request.auth.uid == userId || isAdmin());
+      allow write: if isSignedIn()
+                   && request.auth.uid == userId
+                   && isImage()
+                   && underMaxSize();
+    }
+  }
+}
