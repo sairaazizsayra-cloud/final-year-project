@@ -6,6 +6,7 @@ import 'package:keychain_shop/constants/app_constants.dart';
 import 'package:keychain_shop/providers/auth_provider.dart';
 import 'package:keychain_shop/providers/favorites_provider.dart';
 import 'package:keychain_shop/providers/notifications_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
 
@@ -100,7 +101,7 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.shopping_bag_outlined,
                   title: 'Orders',
                   subtitle: 'Track home-to-home delivery',
-                  onTap: () => context.push('/orders'),
+                  onTap: () => context.pushOverlay('/orders'),
                 ),
                 const Divider(height: 1, indent: 72),
                 _ProfileTile(
@@ -108,21 +109,21 @@ class ProfileScreen extends StatelessWidget {
                   title: 'Notifications',
                   subtitle:
                       unread > 0 ? '$unread unread' : 'Order updates & offers',
-                  onTap: () => context.push('/notifications'),
+                  onTap: () => context.pushOverlay('/notifications'),
                 ),
                 const Divider(height: 1, indent: 72),
                 _ProfileTile(
                   icon: Icons.favorite_border,
                   title: 'Favorites',
                   subtitle: '$favCount saved',
-                  onTap: () => context.push('/favorites'),
+                  onTap: () => context.pushOverlay('/favorites'),
                 ),
                 const Divider(height: 1, indent: 72),
                 _ProfileTile(
                   icon: Icons.location_on_outlined,
                   title: 'Addresses',
                   subtitle: 'Home-to-home delivery addresses',
-                  onTap: () => context.push('/addresses'),
+                  onTap: () => context.pushOverlay('/addresses'),
                 ),
               ],
             ),

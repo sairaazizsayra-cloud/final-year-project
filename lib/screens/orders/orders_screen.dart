@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/models/order_model.dart';
 import 'package:keychain_shop/providers/orders_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/formatters.dart';
 import 'package:keychain_shop/widgets/section_header.dart';
@@ -91,7 +91,7 @@ class _OrdersList extends StatelessWidget {
         );
 
         return InkWell(
-          onTap: () => context.push('/orders/${order.id}'),
+          onTap: () => context.pushOverlay('/orders/${order.id}'),
           borderRadius: BorderRadius.circular(14),
           child: Container(
             padding: const EdgeInsets.all(14),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/models/address_model.dart';
 import 'package:keychain_shop/providers/address_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
 
@@ -22,7 +23,7 @@ class AddressesScreen extends StatelessWidget {
         title: Text(selectMode ? 'Select address' : 'Addresses'),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/addresses/form'),
+        onPressed: () => context.pushOverlay('/addresses/form'),
         icon: const Icon(Icons.add),
         label: const Text('Add'),
       ),
@@ -59,7 +60,7 @@ class AddressesScreen extends StatelessWidget {
                         const SizedBox(height: 24),
                         AppButton(
                           label: 'Add address',
-                          onPressed: () => context.push('/addresses/form'),
+                          onPressed: () => context.pushOverlay('/addresses/form'),
                         ),
                       ],
                     ),
@@ -80,7 +81,7 @@ class AddressesScreen extends StatelessWidget {
                           context.pop(address);
                         }
                       },
-                      onEdit: () => context.push(
+                      onEdit: () => context.pushOverlay(
                         '/addresses/form',
                         extra: address,
                       ),

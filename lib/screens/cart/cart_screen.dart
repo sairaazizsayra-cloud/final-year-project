@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/providers/cart_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/formatters.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
@@ -103,7 +104,7 @@ class CartScreen extends StatelessWidget {
                       subtotal: cart.subtotal,
                       delivery: cart.deliveryCharges,
                       total: cart.total,
-                      onCheckout: () => context.push('/checkout'),
+                      onCheckout: () => context.pushOverlay('/checkout'),
                     ),
                   ],
                 ),

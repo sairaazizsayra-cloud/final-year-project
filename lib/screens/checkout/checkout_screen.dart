@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/constants/app_constants.dart';
@@ -8,6 +7,7 @@ import 'package:keychain_shop/models/order_model.dart';
 import 'package:keychain_shop/providers/address_provider.dart';
 import 'package:keychain_shop/providers/auth_provider.dart';
 import 'package:keychain_shop/providers/cart_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/services/coupon_service.dart';
 import 'package:keychain_shop/services/firestore_service.dart';
 import 'package:keychain_shop/services/payment_service.dart';
@@ -89,7 +89,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _pickAddress() async {
-    final result = await context.push<AddressModel>(
+    final result = await context.pushOverlay<AddressModel>(
       '/addresses?select=1',
     );
     if (result != null && mounted) {
@@ -189,7 +189,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       await cart.clear();
 
       if (!mounted) return;
-      context.go('/order-success/$orderId');
+      context.goOverlay('/order-success/$orderId');
     } catch (e) {
       debugPrint('[Checkout] place order failed: $e');
       if (!mounted) return;

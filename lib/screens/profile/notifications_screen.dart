@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/providers/notifications_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/formatters.dart';
 
@@ -87,7 +87,7 @@ class NotificationsScreen extends StatelessWidget {
                           if (!context.mounted) return;
                           if (item.orderId != null &&
                               item.orderId!.isNotEmpty) {
-                            context.push('/orders/${item.orderId}');
+                            context.pushOverlay('/orders/${item.orderId}');
                           }
                         },
                         borderRadius: BorderRadius.circular(12),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
 
@@ -70,7 +71,7 @@ class OrderSuccessScreen extends StatelessWidget {
               const Spacer(),
               AppButton(
                 label: 'Track order',
-                onPressed: () => context.go('/orders/$orderId'),
+                onPressed: () => context.goOverlay('/orders/$orderId'),
               ),
               const SizedBox(height: 10),
               AppButton(
@@ -82,7 +83,7 @@ class OrderSuccessScreen extends StatelessWidget {
               AppButton(
                 label: 'My orders',
                 isOutlined: true,
-                onPressed: () => context.go('/orders'),
+                onPressed: () => context.goOverlay('/orders'),
               ),
             ],
           ),
