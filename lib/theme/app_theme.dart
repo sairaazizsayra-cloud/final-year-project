@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Brand colors for Keychain Shop — warm brass / soft charcoal retail look.
+/// Brand colors for Keychain Shop — warm brass / cream boutique retail look.
 class AppColors {
   AppColors._();
 
@@ -29,6 +29,43 @@ class AppColors {
   static const Color divider = Color(0xFFEDE6DC);
   static const Color shimmerBase = Color(0xFFE8E0D6);
   static const Color shimmerHighlight = Color(0xFFF5F0EA);
+}
+
+class AppRadii {
+  AppRadii._();
+
+  static const double sm = 10;
+  static const double md = 16;
+  static const double lg = 22;
+  static const double xl = 28;
+}
+
+class AppShadows {
+  AppShadows._();
+
+  static List<BoxShadow> get card => const [
+        BoxShadow(
+          color: Color(0x14000000),
+          blurRadius: 18,
+          offset: Offset(0, 8),
+        ),
+      ];
+
+  static List<BoxShadow> get soft => const [
+        BoxShadow(
+          color: Color(0x12000000),
+          blurRadius: 12,
+          offset: Offset(0, 4),
+        ),
+      ];
+
+  static List<BoxShadow> get brass => [
+        BoxShadow(
+          color: AppColors.primary.withValues(alpha: 0.32),
+          blurRadius: 22,
+          offset: const Offset(0, 10),
+        ),
+      ];
 }
 
 class AppTheme {
@@ -70,7 +107,7 @@ class AppTheme {
         ),
         headlineMedium: displayText.headlineMedium?.copyWith(
           color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
         ),
         headlineSmall: displayText.headlineSmall?.copyWith(
           color: AppColors.textPrimary,
@@ -96,6 +133,7 @@ class AppTheme {
       ),
       appBarTheme: AppBarTheme(
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
@@ -112,7 +150,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.md),
           ),
           textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 16,
@@ -126,7 +164,7 @@ class AppTheme {
           side: const BorderSide(color: AppColors.primary, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.md),
           ),
         ),
       ),
@@ -144,19 +182,19 @@ class AppTheme {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           borderSide: const BorderSide(color: AppColors.error),
         ),
         hintStyle: const TextStyle(color: AppColors.textHint),
@@ -166,7 +204,7 @@ class AppTheme {
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           side: const BorderSide(color: AppColors.border),
         ),
       ),
@@ -177,7 +215,9 @@ class AppTheme {
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
         side: const BorderSide(color: AppColors.border),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -185,12 +225,51 @@ class AppTheme {
         foregroundColor: AppColors.textOnPrimary,
         elevation: 2,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        height: 72,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.16),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color: selected ? AppColors.primaryDark : AppColors.textHint,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? AppColors.primaryDark : AppColors.textHint,
+            size: 24,
+          );
+        }),
+      ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textHint,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: AppColors.primaryDark,
+        unselectedLabelColor: AppColors.textHint,
+        indicatorColor: AppColors.primary,
+        dividerColor: AppColors.divider,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+        ),
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
@@ -202,7 +281,9 @@ class AppTheme {
           color: AppColors.textOnPrimary,
         ),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
       ),
     );
   }

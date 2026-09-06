@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/prefs_helper.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
+import 'package:keychain_shop/widgets/brand_mark.dart';
 
 class _OnboardPage {
   const _OnboardPage({
@@ -77,93 +78,91 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isLast = _index == _pages.length - 1;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: _finish,
-                child: const Text('Skip'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF3E6D6),
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _finish,
+                  child: const Text('Skip'),
+                ),
               ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: _pages.length,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (context, i) {
-                  final p = _pages[i];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.primaryLight.withValues(alpha: 0.45),
-                                AppColors.primary.withValues(alpha: 0.9),
-                              ],
-                            ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: _pages.length,
+                  onPageChanged: (i) => setState(() => _index = i),
+                  itemBuilder: (context, i) {
+                    final p = _pages[i];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          BrandMark(size: 148, icon: p.icon),
+                          const SizedBox(height: 40),
+                          Text(
+                            p.title,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
-                          child: Icon(p.icon, size: 64, color: Colors.white),
-                        ),
-                        const SizedBox(height: 40),
-                        Text(
-                          p.title,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          p.subtitle,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: AppColors.textSecondary,
-                                height: 1.45,
-                              ),
-                        ),
-                      ],
+                          const SizedBox(height: 14),
+                          Text(
+                            p.subtitle,
+                            textAlign: TextAlign.center,
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: AppColors.textSecondary,
+                                      height: 1.45,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_pages.length, (i) {
+                  final active = i == _index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: active ? 22 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: active ? AppColors.primary : AppColors.border,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   );
-                },
+                }),
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_pages.length, (i) {
-                final active = i == _index;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: active ? 22 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: active ? AppColors.primary : AppColors.border,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                );
-              }),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-              child: AppButton(
-                label: isLast ? 'Get Started' : 'Next',
-                onPressed: _next,
-                icon: isLast ? Icons.arrow_forward : null,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                child: AppButton(
+                  label: isLast ? 'Get Started' : 'Next',
+                  onPressed: _next,
+                  icon: isLast ? Icons.arrow_forward : null,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

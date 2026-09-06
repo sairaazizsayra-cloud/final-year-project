@@ -26,7 +26,7 @@ class CategoryModel {
       name: map['name'] as String? ?? '',
       description: map['description'] as String?,
       imageUrl: map['imageUrl'] as String?,
-      sortOrder: map['sortOrder'] as int? ?? 0,
+      sortOrder: (map['sortOrder'] as num?)?.toInt() ?? 0,
       isActive: map['isActive'] as bool? ?? true,
       createdAt: _parseTimestamp(map['createdAt']),
     );

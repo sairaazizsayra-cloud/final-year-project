@@ -7,6 +7,7 @@ import 'package:keychain_shop/providers/cart_provider.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/formatters.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
+import 'package:keychain_shop/widgets/section_header.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -54,7 +55,14 @@ class CartScreen extends StatelessWidget {
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : cart.isEmpty
-              ? _EmptyCart(onBrowse: () => context.go('/browse'))
+              ? AppEmptyState(
+                  icon: Icons.shopping_bag_outlined,
+                  title: 'Your cart is empty',
+                  message:
+                      'Add keychains to continue to home-to-home delivery checkout.',
+                  actionLabel: 'Browse products',
+                  onAction: () => context.go('/browse'),
+                )
               : Column(
                   children: [
                     Expanded(
@@ -103,46 +111,6 @@ class CartScreen extends StatelessWidget {
   }
 }
 
-class _EmptyCart extends StatelessWidget {
-  const _EmptyCart({required this.onBrowse});
-
-  final VoidCallback onBrowse;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.shopping_cart_outlined,
-              size: 64,
-              color: AppColors.primaryLight,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Your cart is empty',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Add keychains to continue to home-to-home delivery checkout.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            AppButton(label: 'Browse products', onPressed: onBrowse),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CartLine extends StatelessWidget {
   const _CartLine({
     required this.name,
@@ -172,8 +140,9 @@ class _CartLine extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(color: AppColors.border),
+        boxShadow: AppShadows.soft,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,9 +267,10 @@ class _CartSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        boxShadow: AppShadows.card,
+        border: const Border(top: BorderSide(color: AppColors.border)),
       ),
       child: SafeArea(
         top: false,

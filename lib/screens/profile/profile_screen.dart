@@ -26,25 +26,32 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF2C3E50),
+                  Color(0xFF8B5A2B),
+                ],
+              ),
+              boxShadow: AppShadows.card,
             ),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 32,
-                  backgroundColor: AppColors.primaryLight.withValues(alpha: 0.4),
+                  radius: 34,
+                  backgroundColor: Colors.white.withValues(alpha: 0.18),
                   child: Text(
                     (user?.name.isNotEmpty == true)
                         ? user!.name.characters.first.toUpperCase()
                         : '?',
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 26,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -55,12 +62,24 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       Text(
                         user?.name ?? 'Guest',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user?.email ?? '',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        AppConstants.appTagline,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.primaryLight,
+                            ),
                       ),
                     ],
                   ),
@@ -69,79 +88,109 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _ProfileTile(
-            icon: Icons.shopping_bag_outlined,
-            title: 'Orders',
-            subtitle: 'Track home-to-home delivery',
-            onTap: () => context.push('/orders'),
-          ),
-          _ProfileTile(
-            icon: Icons.notifications_none_rounded,
-            title: 'Notifications',
-            subtitle: unread > 0 ? '$unread unread' : 'Order updates & offers',
-            onTap: () => context.push('/notifications'),
-          ),
-          _ProfileTile(
-            icon: Icons.favorite_border,
-            title: 'Favorites',
-            subtitle: '$favCount saved',
-            onTap: () => context.push('/favorites'),
-          ),
-          _ProfileTile(
-            icon: Icons.location_on_outlined,
-            title: 'Addresses',
-            subtitle: 'Home-to-home delivery addresses',
-            onTap: () => context.push('/addresses'),
-          ),
-          _ProfileTile(
-            icon: Icons.help_outline,
-            title: 'Help & Support',
-            subtitle: 'FAQ & contact',
-            onTap: () {
-              showDialog<void>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Help & Support'),
-                  content: const Text(
-                    'For order issues, open the order detail and check tracking.\n\n'
-                    'Email: support@keychainshop.local\n'
-                    'Home-to-home delivery usually takes 2–4 days.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          _ProfileTile(
-            icon: Icons.info_outline,
-            title: 'About',
-            subtitle: '${AppConstants.appName} · v1.0.0',
-            onTap: () {
-              showAboutDialog(
-                context: context,
-                applicationName: AppConstants.appName,
-                applicationVersion: '1.0.0',
-                applicationLegalese:
-                    'Final Year Project — Flutter + Firebase.',
-                children: const [
-                  SizedBox(height: 12),
-                  Text(AppConstants.appTagline),
-                ],
-              );
-            },
-          ),
-          if (auth.isAdmin)
-            _ProfileTile(
-              icon: Icons.admin_panel_settings_outlined,
-              title: 'Admin panel',
-              subtitle: 'Manage store',
-              onTap: () => context.go('/admin'),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(color: AppColors.border),
             ),
+            child: Column(
+              children: [
+                _ProfileTile(
+                  icon: Icons.shopping_bag_outlined,
+                  title: 'Orders',
+                  subtitle: 'Track home-to-home delivery',
+                  onTap: () => context.push('/orders'),
+                ),
+                const Divider(height: 1, indent: 72),
+                _ProfileTile(
+                  icon: Icons.notifications_none_rounded,
+                  title: 'Notifications',
+                  subtitle:
+                      unread > 0 ? '$unread unread' : 'Order updates & offers',
+                  onTap: () => context.push('/notifications'),
+                ),
+                const Divider(height: 1, indent: 72),
+                _ProfileTile(
+                  icon: Icons.favorite_border,
+                  title: 'Favorites',
+                  subtitle: '$favCount saved',
+                  onTap: () => context.push('/favorites'),
+                ),
+                const Divider(height: 1, indent: 72),
+                _ProfileTile(
+                  icon: Icons.location_on_outlined,
+                  title: 'Addresses',
+                  subtitle: 'Home-to-home delivery addresses',
+                  onTap: () => context.push('/addresses'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                _ProfileTile(
+                  icon: Icons.help_outline,
+                  title: 'Help & Support',
+                  subtitle: 'FAQ & contact',
+                  onTap: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Help & Support'),
+                        content: const Text(
+                          'For order issues, open the order detail and check tracking.\n\n'
+                          'Email: support@keychainshop.local\n'
+                          'Home-to-home delivery usually takes 2–4 days.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 1, indent: 72),
+                _ProfileTile(
+                  icon: Icons.info_outline,
+                  title: 'About',
+                  subtitle: '${AppConstants.appName} · v1.0.0',
+                  onTap: () {
+                    showAboutDialog(
+                      context: context,
+                      applicationName: AppConstants.appName,
+                      applicationVersion: '1.0.0',
+                      applicationLegalese:
+                          'Final Year Project — Flutter + Firebase.',
+                      children: const [
+                        SizedBox(height: 12),
+                        Text(AppConstants.appTagline),
+                      ],
+                    );
+                  },
+                ),
+                if (auth.isAdmin) ...[
+                  const Divider(height: 1, indent: 72),
+                  _ProfileTile(
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'Admin panel',
+                    subtitle: 'Manage store',
+                    onTap: () => context.go('/admin'),
+                  ),
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
           AppButton(
             label: 'Logout',
@@ -174,7 +223,7 @@ class _ProfileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       leading: Container(
         width: 44,
         height: 44,

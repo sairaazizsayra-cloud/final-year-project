@@ -8,6 +8,7 @@ import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/validators.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
 import 'package:keychain_shop/widgets/app_text_field.dart';
+import 'package:keychain_shop/widgets/brand_mark.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -56,91 +57,109 @@ class _LoginScreenState extends State<LoginScreen> {
     final isLoading = context.watch<AuthProvider>().isLoading;
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(14),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF3E6D6),
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  const BrandMark(size: 64),
+                  const SizedBox(height: 28),
+                  Text(
+                    'Welcome back',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
-                  child: const Icon(Icons.key, color: Colors.white, size: 28),
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  'Welcome back',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sign in to continue shopping at ${AppConstants.appName}.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 28),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.soft,
+                    ),
+                    child: Column(
+                      children: [
+                        AppTextField(
+                          controller: _emailController,
+                          label: 'Email',
+                          hint: 'you@example.com',
+                          prefixIcon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          validator: Validators.email,
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _passwordController,
+                          label: 'Password',
+                          hint: '••••••••',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: _obscure,
+                          onToggleObscure: () =>
+                              setState(() => _obscure = !_obscure),
+                          textInputAction: TextInputAction.done,
+                          validator: Validators.password,
+                          onFieldSubmitted: (_) => _submit(),
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => context.push('/forgot-password'),
+                            child: const Text('Forgot password?'),
+                          ),
+                        ),
+                        AppButton(
+                          label: 'Sign In',
+                          isLoading: isLoading,
+                          onPressed: _submit,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account?",
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign in to continue shopping at ${AppConstants.appName}.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 32),
-                AppTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'you@example.com',
-                  prefixIcon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  validator: Validators.email,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _passwordController,
-                  label: 'Password',
-                  hint: '••••••••',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: _obscure,
-                  onToggleObscure: () =>
-                      setState(() => _obscure = !_obscure),
-                  textInputAction: TextInputAction.done,
-                  validator: Validators.password,
-                  onFieldSubmitted: (_) => _submit(),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => context.push('/forgot-password'),
-                    child: const Text('Forgot password?'),
+                      TextButton(
+                        onPressed: () => context.push('/signup'),
+                        child: const Text('Sign Up'),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                AppButton(
-                  label: 'Sign In',
-                  isLoading: isLoading,
-                  onPressed: _submit,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account?",
-                      style: Theme.of(context).textTheme.bodyMedium,
+                  Center(
+                    child: TextButton(
+                      onPressed: () => context.go('/admin/login'),
+                      child: const Text('Admin login'),
                     ),
-                    TextButton(
-                      onPressed: () => context.push('/signup'),
-                      child: const Text('Sign Up'),
-                    ),
-                  ],
-                ),
-                TextButton(
-                  onPressed: () => context.go('/admin/login'),
-                  child: const Text('Admin login'),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

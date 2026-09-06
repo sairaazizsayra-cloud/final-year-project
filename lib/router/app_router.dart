@@ -36,14 +36,24 @@ import 'package:keychain_shop/screens/profile/notifications_screen.dart';
 import 'package:keychain_shop/screens/splash/splash_screen.dart';
 import 'package:keychain_shop/utils/product_filters.dart';
 
+/// Navigator keys owned by the single [GoRouter] instance.
+class AppNavigatorKeys {
+  AppNavigatorKeys();
+
+  final GlobalKey<NavigatorState> root =
+      GlobalKey<NavigatorState>(debugLabel: 'root');
+  final GlobalKey<NavigatorState> adminShell =
+      GlobalKey<NavigatorState>(debugLabel: 'adminShell');
+}
+
 /// Application routes powered by go_router.
 class AppRouter {
   AppRouter._();
 
-  static final GlobalKey<NavigatorState> rootNavigatorKey =
-      GlobalKey<NavigatorState>();
-  static final GlobalKey<NavigatorState> adminShellNavigatorKey =
-      GlobalKey<NavigatorState>();
+  static const home = '/home';
+  static const browse = '/browse';
+  static const cart = '/cart';
+  static const profile = '/profile';
 
   static ProductSection _parseSection(String? value) {
     return ProductSection.values.firstWhere(
@@ -52,9 +62,107 @@ class AppRouter {
     );
   }
 
-  static GoRouter create(AuthProvider auth) {
+  /// Full-screen customer routes nested under a tab so `parentNavigatorKey`
+  /// is legal (must be a descendant of the branch, not a sibling of the shell).
+  static List<RouteBase> _tabOverlayRoutes(AppNavigatorKeys keys) {
+    return [
+      GoRoute(
+        path: 'search',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) => const SearchScreen(),
+      ),
+      GoRoute(
+        path: 'favorites',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: 'products',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) {
+          final categoryId = state.uri.queryParameters['categoryId'];
+          final title = state.uri.queryParameters['title'];
+          final section = _parseSection(
+            state.uri.queryParameters['section'],
+          );
+          return ProductListScreen(
+            categoryId: categoryId,
+            title: title,
+            section: section,
+          );
+        },
+      ),
+      GoRoute(
+        path: 'products/:id',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ProductDetailScreen(productId: id);
+        },
+      ),
+      GoRoute(
+        path: 'checkout',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) => const CheckoutScreen(),
+      ),
+      GoRoute(
+        path: 'order-success/:orderId',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          return OrderSuccessScreen(orderId: orderId);
+        },
+      ),
+      GoRoute(
+        path: 'orders',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) {
+          final tab = int.tryParse(
+                state.uri.queryParameters['tab'] ?? '0',
+              ) ??
+              0;
+          return OrdersScreen(initialTab: tab);
+        },
+      ),
+      GoRoute(
+        path: 'orders/:id',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return OrderDetailScreen(orderId: id);
+        },
+      ),
+      GoRoute(
+        path: 'notifications',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: 'addresses',
+        parentNavigatorKey: keys.root,
+        builder: (context, state) {
+          final select = state.uri.queryParameters['select'] == '1';
+          return AddressesScreen(selectMode: select);
+        },
+        routes: [
+          GoRoute(
+            path: 'form',
+            parentNavigatorKey: keys.root,
+            builder: (context, state) {
+              final existing = state.extra is AddressModel
+                  ? state.extra as AddressModel
+                  : null;
+              return AddressFormScreen(existing: existing);
+            },
+          ),
+        ],
+      ),
+    ];
+  }
+
+  static GoRouter create(AuthProvider auth, AppNavigatorKeys keys) {
     return GoRouter(
-      navigatorKey: rootNavigatorKey,
+      navigatorKey: keys.root,
       initialLocation: '/splash',
       refreshListenable: auth,
       redirect: (context, state) {
@@ -120,7 +228,7 @@ class AppRouter {
           builder: (context, state) => const AdminLoginScreen(),
         ),
         ShellRoute(
-          navigatorKey: adminShellNavigatorKey,
+          navigatorKey: keys.adminShell,
           builder: (context, state, child) => AdminShell(child: child),
           routes: [
             GoRoute(
@@ -135,7 +243,7 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: 'form',
-                  parentNavigatorKey: rootNavigatorKey,
+                  parentNavigatorKey: keys.root,
                   builder: (context, state) {
                     final existing = state.extra is ProductModel
                         ? state.extra as ProductModel
@@ -182,95 +290,6 @@ class AppRouter {
             ),
           ],
         ),
-        GoRoute(
-          path: '/search',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) => const SearchScreen(),
-        ),
-        GoRoute(
-          path: '/favorites',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) => const FavoritesScreen(),
-        ),
-        GoRoute(
-          path: '/products',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) {
-            final categoryId = state.uri.queryParameters['categoryId'];
-            final title = state.uri.queryParameters['title'];
-            final section = _parseSection(
-              state.uri.queryParameters['section'],
-            );
-            return ProductListScreen(
-              categoryId: categoryId,
-              title: title,
-              section: section,
-            );
-          },
-        ),
-        GoRoute(
-          path: '/products/:id',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) {
-            final id = state.pathParameters['id']!;
-            return ProductDetailScreen(productId: id);
-          },
-        ),
-        GoRoute(
-          path: '/checkout',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) => const CheckoutScreen(),
-        ),
-        GoRoute(
-          path: '/order-success/:orderId',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) {
-            final orderId = state.pathParameters['orderId']!;
-            return OrderSuccessScreen(orderId: orderId);
-          },
-        ),
-        GoRoute(
-          path: '/orders',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) {
-            final tab = int.tryParse(
-                  state.uri.queryParameters['tab'] ?? '0',
-                ) ??
-                0;
-            return OrdersScreen(initialTab: tab);
-          },
-        ),
-        GoRoute(
-          path: '/orders/:id',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) {
-            final id = state.pathParameters['id']!;
-            return OrderDetailScreen(orderId: id);
-          },
-        ),
-        GoRoute(
-          path: '/notifications',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) => const NotificationsScreen(),
-        ),
-        GoRoute(
-          path: '/addresses',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) {
-            final select = state.uri.queryParameters['select'] == '1';
-            return AddressesScreen(selectMode: select);
-          },
-        ),
-        GoRoute(
-          path: '/addresses/form',
-          parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) {
-            final existing = state.extra is AddressModel
-                ? state.extra as AddressModel
-                : null;
-            return AddressFormScreen(existing: existing);
-          },
-        ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
             return MainShell(navigationShell: navigationShell);
@@ -279,32 +298,36 @@ class AppRouter {
             StatefulShellBranch(
               routes: [
                 GoRoute(
-                  path: '/home',
+                  path: home,
                   builder: (context, state) => const HomeBranch(),
+                  routes: _tabOverlayRoutes(keys),
                 ),
               ],
             ),
             StatefulShellBranch(
               routes: [
                 GoRoute(
-                  path: '/browse',
+                  path: browse,
                   builder: (context, state) => const BrowseBranch(),
+                  routes: _tabOverlayRoutes(keys),
                 ),
               ],
             ),
             StatefulShellBranch(
               routes: [
                 GoRoute(
-                  path: '/cart',
+                  path: cart,
                   builder: (context, state) => const CartBranch(),
+                  routes: _tabOverlayRoutes(keys),
                 ),
               ],
             ),
             StatefulShellBranch(
               routes: [
                 GoRoute(
-                  path: '/profile',
+                  path: profile,
                   builder: (context, state) => const ProfileBranch(),
+                  routes: _tabOverlayRoutes(keys),
                 ),
               ],
             ),
@@ -312,5 +335,33 @@ class AppRouter {
         ),
       ],
     );
+  }
+}
+
+/// Pushes full-screen customer routes onto the current tab branch.
+///
+/// Overlay paths must be nested under the shell (not siblings). Pushing a
+/// sibling overlay made go_router insert the shell twice and triggered
+/// `!keyReservation.contains(key)` on add-to-cart / checkout.
+extension AppOverlayNav on BuildContext {
+  String get shellPrefix {
+    final loc = GoRouterState.of(this).matchedLocation;
+    if (loc.startsWith(AppRouter.browse)) return AppRouter.browse;
+    if (loc.startsWith(AppRouter.cart)) return AppRouter.cart;
+    if (loc.startsWith(AppRouter.profile)) return AppRouter.profile;
+    return AppRouter.home;
+  }
+
+  Future<T?> pushOverlay<T extends Object?>(
+    String overlayPath, {
+    Object? extra,
+  }) {
+    assert(overlayPath.startsWith('/'), 'overlayPath must start with /');
+    return push<T>('$shellPrefix$overlayPath', extra: extra);
+  }
+
+  void goOverlay(String overlayPath, {Object? extra}) {
+    assert(overlayPath.startsWith('/'), 'overlayPath must start with /');
+    go('$shellPrefix$overlayPath', extra: extra);
   }
 }

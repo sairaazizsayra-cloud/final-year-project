@@ -6,6 +6,7 @@ import 'package:keychain_shop/models/order_model.dart';
 import 'package:keychain_shop/providers/orders_provider.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/formatters.dart';
+import 'package:keychain_shop/widgets/section_header.dart';
 
 class OrdersScreen extends StatelessWidget {
   const OrdersScreen({super.key, this.initialTab = 0});
@@ -70,26 +71,10 @@ class _OrdersList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (orders.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.shopping_bag_outlined,
-                size: 56,
-                color: AppColors.primaryLight,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                emptyMessage,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ],
-          ),
-        ),
+      return AppEmptyState(
+        icon: Icons.shopping_bag_outlined,
+        title: emptyMessage,
+        message: 'Your keychain orders will show up here with tracking.',
       );
     }
 
@@ -112,8 +97,9 @@ class _OrdersList extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadii.md),
               border: Border.all(color: AppColors.border),
+              boxShadow: AppShadows.soft,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -34,10 +35,18 @@ Future<void> main() async {
   );
 
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
     debugPrint('[main] Firebase initialized');
+
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    }
   } catch (e, st) {
     debugPrint('[main] Firebase init failed: $e');
     debugPrint('$st');
@@ -136,38 +145,56 @@ class KeychainShopApp extends StatelessWidget {
           },
         ),
       ],
-      child: const _AppView(),
+      child: Builder(
+        builder: (context) => _AppView(auth: context.read<AuthProvider>()),
+      ),
     );
   }
 }
 
 class _AppView extends StatefulWidget {
-  const _AppView();
+  const _AppView({required this.auth});
+
+  final AuthProvider auth;
 
   @override
   State<_AppView> createState() => _AppViewState();
 }
 
 class _AppViewState extends State<_AppView> {
-  GoRouter? _router;
+  final _navKeys = AppNavigatorKeys();
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+  late final GoRouter _router =
+      AppRouter.create(widget.auth, _navKeys);
   bool _fcmReady = false;
   String? _syncedUserId;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _router ??= AppRouter.create(context.read<AuthProvider>());
-    if (!_fcmReady) {
-      _fcmReady = true;
-      _bootstrapFcm();
-    }
-    _syncFcmTokenIfNeeded();
+  void initState() {
+    super.initState();
+    widget.auth.addListener(_syncFcmTokenIfNeeded);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_fcmReady) {
+        _fcmReady = true;
+        if (NotificationService.isPlatformSupported) {
+          _bootstrapFcm();
+        }
+      }
+      _syncFcmTokenIfNeeded();
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.auth.removeListener(_syncFcmTokenIfNeeded);
+    _router.dispose();
+    super.dispose();
   }
 
   Future<void> _bootstrapFcm() async {
     final notifications = context.read<NotificationService>();
     final authService = context.read<AuthService>();
-    final messenger = ScaffoldMessenger.maybeOf(context);
 
     notifications.onTokenRefresh = (token) {
       final uid = context.read<AuthProvider>().user?.id;
@@ -179,7 +206,7 @@ class _AppViewState extends State<_AppView> {
     notifications.onForegroundMessage = (RemoteMessage message) {
       final title = message.notification?.title ?? 'Keychain Shop';
       final body = message.notification?.body ?? '';
-      messenger?.showSnackBar(
+      _messengerKey.currentState?.showSnackBar(
         SnackBar(content: Text(body.isEmpty ? title : '$title — $body')),
       );
     };
@@ -187,9 +214,9 @@ class _AppViewState extends State<_AppView> {
     notifications.onMessageOpened = (RemoteMessage message) {
       final orderId = message.data['orderId'];
       if (orderId != null && orderId.toString().isNotEmpty) {
-        _router?.go('/orders/$orderId');
+        _router.go('${AppRouter.home}/orders/$orderId');
       } else {
-        _router?.go('/notifications');
+        _router.go('${AppRouter.home}/notifications');
       }
     };
 
@@ -199,6 +226,7 @@ class _AppViewState extends State<_AppView> {
   }
 
   Future<void> _syncFcmTokenIfNeeded() async {
+    if (!mounted) return;
     final auth = context.read<AuthProvider>();
     final user = auth.user;
     if (user == null) {
@@ -222,14 +250,12 @@ class _AppViewState extends State<_AppView> {
 
   @override
   Widget build(BuildContext context) {
-    // Rebuild when auth changes so token sync runs for new sessions.
-    context.watch<AuthProvider>();
-
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      routerConfig: _router!,
+      scaffoldMessengerKey: _messengerKey,
+      routerConfig: _router,
     );
   }
 }

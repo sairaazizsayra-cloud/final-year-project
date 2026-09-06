@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/models/product_model.dart';
 import 'package:keychain_shop/providers/favorites_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/formatters.dart';
 
@@ -28,14 +29,15 @@ class ProductCard extends StatelessWidget {
     final isFav = favorites.isFavorite(product.id);
 
     return InkWell(
-      onTap: () => context.push('/products/${product.id}'),
-      borderRadius: BorderRadius.circular(16),
+      onTap: () => context.pushOverlay('/products/${product.id}'),
+      borderRadius: BorderRadius.circular(AppRadii.md),
       child: Container(
         width: width,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           border: Border.all(color: AppColors.border),
+          boxShadow: AppShadows.soft,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +45,7 @@ class ProductCard extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+                  top: Radius.circular(AppRadii.md),
                 ),
                 child: Stack(
                   fit: StackFit.expand,
@@ -84,20 +86,23 @@ class ProductCard extends StatelessWidget {
                       ),
                     if (showFavorite)
                       Positioned(
-                        top: 4,
-                        right: 4,
+                        top: 6,
+                        right: 6,
                         child: Material(
-                          color: Colors.white.withValues(alpha: 0.92),
+                          color: Colors.white.withValues(alpha: 0.94),
                           shape: const CircleBorder(),
-                          child: IconButton(
-                            visualDensity: VisualDensity.compact,
-                            iconSize: 20,
-                            onPressed: () => favorites.toggle(product.id),
-                            icon: Icon(
-                              isFav ? Icons.favorite : Icons.favorite_border,
-                              color: isFav
-                                  ? AppColors.error
-                                  : AppColors.textSecondary,
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => favorites.toggle(product.id),
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                size: 18,
+                                color: isFav
+                                    ? AppColors.error
+                                    : AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ),
@@ -118,6 +123,7 @@ class ProductCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
+                          height: 1.25,
                         ),
                   ),
                   const SizedBox(height: 6),
@@ -150,8 +156,11 @@ class ProductCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded,
-                            size: 14, color: AppColors.warning),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 14,
+                          color: AppColors.warning,
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           product.rating.toStringAsFixed(1),
@@ -177,7 +186,7 @@ class _ImageFallback extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.surfaceMuted,
-      child: const Icon(Icons.key, size: 40, color: AppColors.primaryLight),
+      child: const Icon(Icons.key_rounded, size: 40, color: AppColors.primaryLight),
     );
   }
 }

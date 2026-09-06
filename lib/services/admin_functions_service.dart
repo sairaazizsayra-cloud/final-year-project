@@ -4,9 +4,12 @@ import 'package:flutter/foundation.dart';
 /// Admin-only Cloud Function calls (order status, etc.).
 class AdminFunctionsService {
   AdminFunctionsService({FirebaseFunctions? functions})
-      : _functions = functions ?? FirebaseFunctions.instance;
+      : _functionsOverride = functions;
 
-  final FirebaseFunctions _functions;
+  final FirebaseFunctions? _functionsOverride;
+
+  FirebaseFunctions get _functions =>
+      _functionsOverride ?? FirebaseFunctions.instance;
 
   /// Updates order status via CF so FCM + delivery sync run server-side.
   Future<void> updateOrderStatus({

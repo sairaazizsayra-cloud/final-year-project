@@ -45,7 +45,7 @@ class CartItemModel {
       productImage: map['productImage'] as String?,
       price: (map['price'] as num?)?.toDouble() ?? 0,
       discount: (map['discount'] as num?)?.toDouble() ?? 0,
-      quantity: map['quantity'] as int? ?? 1,
+      quantity: (map['quantity'] as num?)?.toInt() ?? 1,
       selectedColor: map['selectedColor'] as String?,
       selectedSize: map['selectedSize'] as String?,
       customText: map['customText'] as String?,

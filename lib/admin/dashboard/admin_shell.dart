@@ -47,15 +47,27 @@ class AdminShell extends StatelessWidget {
     return ListView(
       children: [
         for (var i = 0; i < _destinations.length; i++)
-          ListTile(
-            leading: Icon(_destinations[i].icon),
-            title: Text(_destinations[i].label),
-            selected: i == index,
-            selectedTileColor: AppColors.primaryLight.withValues(alpha: 0.25),
-            onTap: () {
-              onTapItem?.call();
-              context.go(_destinations[i].path);
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: ListTile(
+              leading: Icon(_destinations[i].icon),
+              title: Text(
+                _destinations[i].label,
+                style: TextStyle(
+                  fontWeight: i == index ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+              selected: i == index,
+              selectedTileColor: AppColors.primary.withValues(alpha: 0.14),
+              selectedColor: AppColors.primaryDark,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
+              onTap: () {
+                onTapItem?.call();
+                context.go(_destinations[i].path);
+              },
+            ),
           ),
       ],
     );
@@ -92,12 +104,40 @@ class AdminShell extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const DrawerHeader(
-                      child: Text(
-                        'Admin',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
+                    DrawerHeader(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF2C3E50),
+                            Color(0xFF8B5A2B),
+                          ],
+                        ),
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const Icon(Icons.key_rounded, color: Colors.white),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Keychain Shop',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            const Text(
+                              'Admin',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -116,10 +156,47 @@ class AdminShell extends StatelessWidget {
         children: [
           if (wide)
             SizedBox(
-              width: 220,
+              width: 240,
               child: Material(
                 color: AppColors.surface,
-                child: _navList(context, index),
+                child: Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF2C3E50),
+                            Color(0xFF8B5A2B),
+                          ],
+                        ),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.key_rounded, color: Colors.white),
+                          SizedBox(height: 10),
+                          Text(
+                            'Keychain Shop',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                            ),
+                          ),
+                          Text(
+                            'Admin',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(child: _navList(context, index)),
+                  ],
+                ),
               ),
             ),
           if (wide) const VerticalDivider(width: 1),

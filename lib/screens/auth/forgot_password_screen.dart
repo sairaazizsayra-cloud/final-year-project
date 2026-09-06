@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/providers/auth_provider.dart';
-import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/validators.dart';
 import 'package:keychain_shop/widgets/app_button.dart';
 import 'package:keychain_shop/widgets/app_text_field.dart';
+import 'package:keychain_shop/widgets/brand_mark.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -64,12 +64,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.mark_email_read_outlined,
-                      size: 56,
-                      color: AppColors.primary,
+                    const BrandMark(
+                      size: 72,
+                      icon: Icons.mark_email_read_outlined,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     Text(
                       'Check your email',
                       style:

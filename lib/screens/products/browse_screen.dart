@@ -74,20 +74,36 @@ class _BrowseScreenState extends State<BrowseScreen> {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
               child: InkWell(
                 onTap: () => context.push('/search'),
-                borderRadius: BorderRadius.circular(12),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    hintText: 'Search keychains…',
-                    prefixIcon: Icon(Icons.search),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.soft,
                   ),
-                  child: const SizedBox(height: 20),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.search, color: AppColors.textHint),
+                      SizedBox(width: 12),
+                      Text(
+                        'Search keychains…',
+                        style: TextStyle(color: AppColors.textHint, fontSize: 15),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            const SectionHeader(title: 'Shop by collection'),
+            const SectionHeader(
+              title: 'Shop by collection',
+              subtitle: 'Jump into a curated shelf',
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
@@ -96,28 +112,33 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 children: [
                   _QuickChip(
                     label: 'All products',
+                    icon: Icons.apps_outlined,
                     onTap: () => context.push('/products'),
                   ),
                   _QuickChip(
                     label: 'Featured',
+                    icon: Icons.star_outline,
                     onTap: () => context.push(
                       '/products?section=${ProductSection.featured.name}',
                     ),
                   ),
                   _QuickChip(
                     label: 'New arrivals',
+                    icon: Icons.auto_awesome_outlined,
                     onTap: () => context.push(
                       '/products?section=${ProductSection.newArrival.name}',
                     ),
                   ),
                   _QuickChip(
                     label: 'Best sellers',
+                    icon: Icons.local_fire_department_outlined,
                     onTap: () => context.push(
                       '/products?section=${ProductSection.bestSeller.name}',
                     ),
                   ),
                   _QuickChip(
                     label: 'Discounts',
+                    icon: Icons.local_offer_outlined,
                     onTap: () => context.push(
                       '/products?section=${ProductSection.discount.name}',
                     ),
@@ -172,17 +193,24 @@ class _BrowseScreenState extends State<BrowseScreen> {
 }
 
 class _QuickChip extends StatelessWidget {
-  const _QuickChip({required this.label, required this.onTap});
+  const _QuickChip({
+    required this.label,
+    required this.onTap,
+    this.icon,
+  });
 
   final String label;
   final VoidCallback onTap;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     return ActionChip(
+      avatar: icon != null ? Icon(icon, size: 16) : null,
       label: Text(label),
       onPressed: onTap,
-      backgroundColor: AppColors.surfaceMuted,
+      backgroundColor: AppColors.surface,
+      side: const BorderSide(color: AppColors.border),
     );
   }
 }
@@ -200,9 +228,10 @@ class _CategoryTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           border: Border.all(color: AppColors.border),
           color: AppColors.surface,
+          boxShadow: AppShadows.soft,
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(

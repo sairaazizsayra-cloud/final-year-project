@@ -6,6 +6,7 @@ import 'package:keychain_shop/constants/app_constants.dart';
 import 'package:keychain_shop/providers/auth_provider.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/prefs_helper.dart';
+import 'package:keychain_shop/widgets/brand_mark.dart';
 
 /// Brand splash — routes to onboarding, login, or home after init.
 class SplashScreen extends StatefulWidget {
@@ -92,22 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.key, size: 48, color: Colors.white),
-                ),
+                const BrandMark(size: 104, icon: Icons.key_rounded),
                 const SizedBox(height: 28),
                 Text(
                   AppConstants.appName,

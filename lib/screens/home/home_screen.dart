@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -44,26 +45,48 @@ class _HomeScreenState extends State<HomeScreen> {
     final firestore = context.read<FirestoreService>();
 
     try {
-      final results = await Future.wait([
-        firestore.getActiveCategories(),
-        firestore.getFeaturedProducts(),
-        firestore.getNewArrivals(),
-        firestore.getBestSellers(),
-        firestore.getActiveProducts(limit: 40),
-      ]);
+      // Load independently so one missing index doesn't blank the whole home.
+      final categories = await firestore.getActiveCategories().catchError((e) {
+        debugPrint('[HomeScreen] categories: $e');
+        return <CategoryModel>[];
+      });
+      final featured = await firestore.getFeaturedProducts().catchError((e) {
+        debugPrint('[HomeScreen] featured: $e');
+        return <ProductModel>[];
+      });
+      final newArrivals = await firestore.getNewArrivals().catchError((e) {
+        debugPrint('[HomeScreen] newArrivals: $e');
+        return <ProductModel>[];
+      });
+      final bestSellers = await firestore.getBestSellers().catchError((e) {
+        debugPrint('[HomeScreen] bestSellers: $e');
+        return <ProductModel>[];
+      });
+      final allProducts =
+          await firestore.getActiveProducts(limit: 40).catchError((e) {
+        debugPrint('[HomeScreen] products: $e');
+        return <ProductModel>[];
+      });
 
-      final allProducts = results[4] as List<ProductModel>;
       final discounted = allProducts.where((p) => p.hasDiscount).toList()
         ..sort((a, b) => b.discount.compareTo(a.discount));
 
       if (!mounted) return;
+      final hasAny = categories.isNotEmpty ||
+          featured.isNotEmpty ||
+          newArrivals.isNotEmpty ||
+          bestSellers.isNotEmpty ||
+          allProducts.isNotEmpty;
       setState(() {
-        _categories = results[0] as List<CategoryModel>;
-        _featured = results[1] as List<ProductModel>;
-        _newArrivals = results[2] as List<ProductModel>;
-        _bestSellers = results[3] as List<ProductModel>;
+        _categories = categories;
+        _featured = featured;
+        _newArrivals = newArrivals;
+        _bestSellers = bestSellers;
         _discounted = discounted.take(10).toList();
         _loading = false;
+        _error = hasAny
+            ? null
+            : 'Could not load catalog yet. Add products in Admin or wait for Firestore indexes to finish building.';
       });
     } catch (e) {
       debugPrint('[HomeScreen] load error: $e');
@@ -108,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Categories',
+                subtitle: 'Shop by collection',
                 onSeeAll: () => context.go('/browse'),
               ),
             ),
@@ -183,45 +207,94 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hello, $firstName',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+    final initial =
+        firstName.isNotEmpty ? firstName.characters.first.toUpperCase() : 'K';
+
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 8, 4),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: AppColors.primary,
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Find your next favorite keychain',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
+              ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hello, $firstName',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Find your next favorite keychain',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            _RoundIconButton(
+              icon: Icons.favorite_border,
+              onPressed: () => context.push('/favorites'),
+            ),
+            Consumer<NotificationsProvider>(
+              builder: (context, notifications, _) {
+                return _RoundIconButton(
+                  icon: Icons.notifications_none_rounded,
+                  badgeCount: notifications.unreadCount,
+                  onPressed: () => context.push('/notifications'),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({
+    required this.icon,
+    required this.onPressed,
+    this.badgeCount = 0,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Badge(
+        isLabelVisible: badgeCount > 0,
+        label: Text('$badgeCount'),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.border),
           ),
-          IconButton(
-            onPressed: () => context.push('/favorites'),
-            icon: const Icon(Icons.favorite_border),
-          ),
-          Consumer<NotificationsProvider>(
-            builder: (context, notifications, _) {
-              return IconButton(
-                onPressed: () => context.push('/notifications'),
-                icon: Badge(
-                  isLabelVisible: notifications.unreadCount > 0,
-                  label: Text('${notifications.unreadCount}'),
-                  child: const Icon(Icons.notifications_none_rounded),
-                ),
-              );
-            },
-          ),
-        ],
+          child: Icon(icon, size: 20, color: AppColors.textPrimary),
+        ),
       ),
     );
   }
@@ -233,15 +306,34 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      child: TextField(
-        readOnly: true,
-        onTap: () => context.push('/search'),
-        decoration: const InputDecoration(
-          hintText: 'Search keychains, materials, styles…',
-          prefixIcon: Icon(Icons.search, color: AppColors.textHint),
-          filled: true,
-          fillColor: AppColors.surface,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        elevation: 0,
+        child: InkWell(
+          onTap: () => context.push('/search'),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(color: AppColors.border),
+              boxShadow: AppShadows.soft,
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.search, color: AppColors.textHint),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Search keychains, materials, styles…',
+                    style: TextStyle(color: AppColors.textHint, fontSize: 15),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -251,41 +343,71 @@ class _SearchBar extends StatelessWidget {
 class _PromoBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 140,
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF2C3E50),
-            Color(0xFF8B5A2B),
-            Color(0xFFB87333),
+    return GestureDetector(
+      onTap: () => context.go('/browse'),
+      child: Container(
+        height: 156,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF2C3E50),
+              Color(0xFF8B5A2B),
+              Color(0xFFB87333),
+            ],
+          ),
+          boxShadow: AppShadows.card,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Home-to-Home Delivery',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Custom keychains delivered to your doorstep.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Shop collections →',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.key_rounded, color: Colors.white24, size: 72),
           ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Home-to-Home Delivery',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Custom keychains delivered to your doorstep.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
-          ),
-        ],
       ),
     );
   }
@@ -305,7 +427,7 @@ class _CategoryRow extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 104,
+      height: 112,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
@@ -313,6 +435,7 @@ class _CategoryRow extends StatelessWidget {
         separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final cat = categories[index];
+          final hasImage = cat.imageUrl != null && cat.imageUrl!.isNotEmpty;
           return InkWell(
             onTap: () => context.push(
               '/products?categoryId=${cat.id}&title=${Uri.encodeComponent(cat.name)}',
@@ -321,21 +444,32 @@ class _CategoryRow extends StatelessWidget {
             child: Column(
               children: [
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: 68,
+                  height: 68,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceMuted,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.soft,
                   ),
-                  child: const Icon(
-                    Icons.category_outlined,
-                    color: AppColors.primary,
-                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: hasImage
+                      ? CachedNetworkImage(
+                          imageUrl: cat.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.category_outlined,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.category_outlined,
+                          color: AppColors.primary,
+                        ),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
-                  width: 72,
+                  width: 76,
                   child: Text(
                     cat.name,
                     maxLines: 1,
@@ -343,7 +477,7 @@ class _CategoryRow extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                   ),
                 ),
@@ -372,7 +506,7 @@ class _ProductRow extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 250,
+      height: 258,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,

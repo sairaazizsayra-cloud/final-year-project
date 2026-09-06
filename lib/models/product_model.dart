@@ -73,7 +73,7 @@ class ProductModel {
       colors: List<String>.from(map['colors'] as List? ?? const []),
       isCustomizable: map['isCustomizable'] as bool? ?? false,
       rating: (map['rating'] as num?)?.toDouble() ?? 0,
-      totalReviews: map['totalReviews'] as int? ?? 0,
+      totalReviews: (map['totalReviews'] as num?)?.toInt() ?? 0,
       isFeatured: map['isFeatured'] as bool? ?? false,
       isBestSeller: map['isBestSeller'] as bool? ?? false,
       isNewArrival: map['isNewArrival'] as bool? ?? false,

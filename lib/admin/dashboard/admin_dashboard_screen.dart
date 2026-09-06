@@ -77,10 +77,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            'Dashboard',
+            'Store overview',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Orders, catalog, and revenue at a glance.',
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -208,20 +213,29 @@ class _StatCard extends StatelessWidget {
     final c = color ?? AppColors.primary;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadii.md),
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(14),
+        width: 168,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           border: Border.all(color: AppColors.border),
+          boxShadow: AppShadows.soft,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: c),
-            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: c.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: c),
+            ),
+            const SizedBox(height: 14),
             Text(
               value,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(

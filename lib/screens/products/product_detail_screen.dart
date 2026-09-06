@@ -7,6 +7,7 @@ import 'package:keychain_shop/models/product_model.dart';
 import 'package:keychain_shop/models/review_model.dart';
 import 'package:keychain_shop/providers/cart_provider.dart';
 import 'package:keychain_shop/providers/favorites_provider.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/services/firestore_service.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/formatters.dart';
@@ -86,7 +87,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.dispose();
   }
 
-  Future<bool> _addToCart() async {
+  Future<bool> _addToCart({bool showFeedback = true}) async {
     final product = _product;
     if (product == null || !product.inStock) return false;
 
@@ -103,27 +104,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (!mounted) return false;
 
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Added to cart'),
-          action: SnackBarAction(
-            label: 'View',
-            onPressed: () => context.push('/cart'),
+      if (showFeedback) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Added to cart'),
+            action: SnackBarAction(
+              label: 'View',
+              onPressed: () {
+                messenger.hideCurrentSnackBar();
+                context.go(AppRouter.cart);
+              },
+            ),
           ),
-        ),
-      );
+        );
+      }
       return true;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(cart.error ?? 'Could not add to cart.')),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(cart.error ?? 'Could not add to cart.')),
+      );
     return false;
   }
 
   Future<void> _buyNow() async {
-    final ok = await _addToCart();
-    if (ok && mounted) context.push('/checkout');
+    final ok = await _addToCart(showFeedback: false);
+    if (ok && mounted) context.pushOverlay('/checkout');
   }
 
   @override
@@ -154,28 +164,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 320,
+            expandedHeight: 360,
             pinned: true,
+            backgroundColor: AppColors.background,
             actions: [
-              IconButton(
-                onPressed: () => favorites.toggle(product.id),
-                icon: Icon(
-                  isFav ? Icons.favorite : Icons.favorite_border,
-                  color: isFav ? AppColors.error : null,
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: CircleAvatar(
+                  backgroundColor: Colors.white.withValues(alpha: 0.92),
+                  child: IconButton(
+                    onPressed: () => favorites.toggle(product.id),
+                    icon: Icon(
+                      isFav ? Icons.favorite : Icons.favorite_border,
+                      color: isFav ? AppColors.error : AppColors.textPrimary,
+                    ),
+                  ),
                 ),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: images.isEmpty
-                  ? Container(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (images.isEmpty)
+                    Container(
                       color: AppColors.surfaceMuted,
                       child: const Icon(
-                        Icons.key,
+                        Icons.key_rounded,
                         size: 72,
                         color: AppColors.primaryLight,
                       ),
                     )
-                  : PageView.builder(
+                  else
+                    PageView.builder(
                       itemCount: images.length,
                       onPageChanged: (i) => setState(() => _imageIndex = i),
                       itemBuilder: (context, index) {
@@ -191,6 +212,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         );
                       },
                     ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black26,
+                          Colors.transparent,
+                          Colors.black38,
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           if (images.length > 1)
@@ -216,8 +252,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            child: Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppRadii.lg),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -419,10 +462,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-          decoration: const BoxDecoration(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          decoration: BoxDecoration(
             color: AppColors.surface,
-            border: Border(top: BorderSide(color: AppColors.border)),
+            boxShadow: AppShadows.soft,
+            border: const Border(top: BorderSide(color: AppColors.border)),
           ),
           child: Consumer<CartProvider>(
             builder: (context, cart, _) {
@@ -465,8 +509,10 @@ class _ReviewTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        boxShadow: AppShadows.soft,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

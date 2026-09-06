@@ -6,9 +6,12 @@ import 'package:keychain_shop/constants/app_constants.dart';
 /// COD is client-side; online verification must go through Cloud Functions.
 class PaymentService {
   PaymentService({FirebaseFunctions? functions})
-      : _functions = functions ?? FirebaseFunctions.instance;
+      : _functionsOverride = functions;
 
-  final FirebaseFunctions _functions;
+  final FirebaseFunctions? _functionsOverride;
+
+  FirebaseFunctions get _functions =>
+      _functionsOverride ?? FirebaseFunctions.instance;
 
   /// Cash on Delivery — no gateway call; payment collected at delivery.
   Future<PaymentResult> processCashOnDelivery({
