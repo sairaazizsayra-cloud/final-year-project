@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/models/category_model.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/services/firestore_service.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/product_filters.dart';
@@ -58,11 +59,11 @@ class _BrowseScreenState extends State<BrowseScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () => context.push('/search'),
+            onPressed: () => context.pushOverlay('/search'),
           ),
           IconButton(
             icon: const Icon(Icons.favorite_border),
-            onPressed: () => context.push('/favorites'),
+            onPressed: () => context.pushOverlay('/favorites'),
           ),
         ],
       ),
@@ -76,7 +77,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
               child: InkWell(
-                onTap: () => context.push('/search'),
+                onTap: () => context.pushOverlay('/search'),
                 borderRadius: BorderRadius.circular(AppRadii.md),
                 child: Container(
                   padding:
@@ -113,33 +114,33 @@ class _BrowseScreenState extends State<BrowseScreen> {
                   _QuickChip(
                     label: 'All products',
                     icon: Icons.apps_outlined,
-                    onTap: () => context.push('/products'),
+                    onTap: () => context.pushOverlay('/products'),
                   ),
                   _QuickChip(
                     label: 'Featured',
                     icon: Icons.star_outline,
-                    onTap: () => context.push(
+                    onTap: () => context.pushOverlay(
                       '/products?section=${ProductSection.featured.name}',
                     ),
                   ),
                   _QuickChip(
                     label: 'New arrivals',
                     icon: Icons.auto_awesome_outlined,
-                    onTap: () => context.push(
+                    onTap: () => context.pushOverlay(
                       '/products?section=${ProductSection.newArrival.name}',
                     ),
                   ),
                   _QuickChip(
                     label: 'Best sellers',
                     icon: Icons.local_fire_department_outlined,
-                    onTap: () => context.push(
+                    onTap: () => context.pushOverlay(
                       '/products?section=${ProductSection.bestSeller.name}',
                     ),
                   ),
                   _QuickChip(
                     label: 'Discounts',
                     icon: Icons.local_offer_outlined,
-                    onTap: () => context.push(
+                    onTap: () => context.pushOverlay(
                       '/products?section=${ProductSection.discount.name}',
                     ),
                   ),
@@ -178,7 +179,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                     final cat = _categories[index];
                     return _CategoryTile(
                       category: cat,
-                      onTap: () => context.push(
+                      onTap: () => context.pushOverlay(
                         '/products?categoryId=${cat.id}&title=${Uri.encodeComponent(cat.name)}',
                       ),
                     );

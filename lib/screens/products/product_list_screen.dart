@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:keychain_shop/models/product_model.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/services/firestore_service.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/product_filters.dart';
@@ -125,7 +126,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () => context.push('/search'),
+            onPressed: () => context.pushOverlay('/search'),
           ),
         ],
       ),

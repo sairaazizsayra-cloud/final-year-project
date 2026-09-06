@@ -8,6 +8,7 @@ import 'package:keychain_shop/models/product_model.dart';
 import 'package:keychain_shop/providers/auth_provider.dart';
 import 'package:keychain_shop/providers/notifications_provider.dart';
 import 'package:keychain_shop/services/firestore_service.dart';
+import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/product_filters.dart';
 import 'package:keychain_shop/widgets/product_card.dart';
@@ -139,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Featured',
-                onSeeAll: () => context.push(
+                onSeeAll: () => context.pushOverlay(
                   '/products?section=${ProductSection.featured.name}',
                 ),
               ),
@@ -153,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'New Arrivals',
-                onSeeAll: () => context.push(
+                onSeeAll: () => context.pushOverlay(
                   '/products?section=${ProductSection.newArrival.name}',
                 ),
               ),
@@ -167,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Best Sellers',
-                onSeeAll: () => context.push(
+                onSeeAll: () => context.pushOverlay(
                   '/products?section=${ProductSection.bestSeller.name}',
                 ),
               ),
@@ -181,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Discounts',
-                onSeeAll: () => context.push(
+                onSeeAll: () => context.pushOverlay(
                   '/products?section=${ProductSection.discount.name}',
                 ),
               ),
@@ -249,14 +250,14 @@ class _Header extends StatelessWidget {
             ),
             _RoundIconButton(
               icon: Icons.favorite_border,
-              onPressed: () => context.push('/favorites'),
+              onPressed: () => context.pushOverlay('/favorites'),
             ),
             Consumer<NotificationsProvider>(
               builder: (context, notifications, _) {
                 return _RoundIconButton(
                   icon: Icons.notifications_none_rounded,
                   badgeCount: notifications.unreadCount,
-                  onPressed: () => context.push('/notifications'),
+                  onPressed: () => context.pushOverlay('/notifications'),
                 );
               },
             ),
@@ -312,7 +313,7 @@ class _SearchBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.md),
         elevation: 0,
         child: InkWell(
-          onTap: () => context.push('/search'),
+          onTap: () => context.pushOverlay('/search'),
           borderRadius: BorderRadius.circular(AppRadii.md),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -437,7 +438,7 @@ class _CategoryRow extends StatelessWidget {
           final cat = categories[index];
           final hasImage = cat.imageUrl != null && cat.imageUrl!.isNotEmpty;
           return InkWell(
-            onTap: () => context.push(
+            onTap: () => context.pushOverlay(
               '/products?categoryId=${cat.id}&title=${Uri.encodeComponent(cat.name)}',
             ),
             borderRadius: BorderRadius.circular(18),
