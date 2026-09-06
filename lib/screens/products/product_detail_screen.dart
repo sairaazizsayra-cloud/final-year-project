@@ -31,6 +31,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _imageIndex = 0;
   String? _selectedColor;
   final _customTextController = TextEditingController();
+  final _pageController = PageController();
 
   @override
   void initState() {
@@ -83,6 +84,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     _customTextController.dispose();
     super.dispose();
   }
@@ -156,289 +158,213 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final product = _product!;
     final favorites = context.watch<FavoritesProvider>();
     final isFav = favorites.isFavorite(product.id);
-    final images = product.images.isNotEmpty
-        ? product.images
-        : <String>[];
+    final images = product.images.where((url) => url.trim().isNotEmpty).toList();
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 360,
-            pinned: true,
-            backgroundColor: AppColors.background,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: CircleAvatar(
-                  backgroundColor: Colors.white.withValues(alpha: 0.92),
-                  child: IconButton(
-                    onPressed: () => favorites.toggle(product.id),
-                    icon: Icon(
-                      isFav ? Icons.favorite : Icons.favorite_border,
-                      color: isFav ? AppColors.error : AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (images.isEmpty)
-                    Container(
-                      color: AppColors.surfaceMuted,
-                      child: const Icon(
-                        Icons.key_rounded,
-                        size: 72,
-                        color: AppColors.primaryLight,
-                      ),
-                    )
-                  else
-                    PageView.builder(
-                      itemCount: images.length,
-                      onPageChanged: (i) => setState(() => _imageIndex = i),
-                      itemBuilder: (context, index) {
-                        return CachedNetworkImage(
-                          imageUrl: images[index],
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              Container(color: AppColors.surfaceMuted),
-                          errorWidget: (context, url, error) => Container(
-                            color: AppColors.surfaceMuted,
-                            child: const Icon(Icons.broken_image_outlined),
-                          ),
-                        );
-                      },
-                    ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black26,
-                          Colors.transparent,
-                          Colors.black38,
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              onPressed: () => favorites.toggle(product.id),
+              icon: Icon(
+                isFav ? Icons.favorite : Icons.favorite_border,
+                color: isFav ? AppColors.error : AppColors.textPrimary,
               ),
             ),
           ),
-          if (images.length > 1)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(images.length, (i) {
-                    return Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: i == _imageIndex
-                            ? AppColors.primary
-                            : AppColors.border,
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+        children: [
+          _ProductImageGallery(
+            images: images,
+            index: _imageIndex,
+            controller: _pageController,
+            onIndexChanged: (i) => setState(() => _imageIndex = i),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (product.categoryName != null)
+                  Text(
+                    product.categoryName!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                const SizedBox(height: 6),
+                Text(
+                  product.name,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                    );
-                  }),
                 ),
-              ),
-            ),
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.only(top: 4),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-              decoration: const BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(AppRadii.lg),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (product.categoryName != null)
+                const SizedBox(height: 10),
+                Row(
+                  children: [
                     Text(
-                      product.categoryName!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      Formatters.currency(product.discountedPrice),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                     ),
-                  const SizedBox(height: 6),
-                  Text(
-                    product.name,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
+                    if (product.hasDiscount) ...[
+                      const SizedBox(width: 10),
                       Text(
-                        Formatters.currency(product.discountedPrice),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: AppColors.primaryDark,
-                              fontWeight: FontWeight.w700,
+                        Formatters.currency(product.price),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              decoration: TextDecoration.lineThrough,
+                              color: AppColors.textHint,
                             ),
                       ),
-                      if (product.hasDiscount) ...[
-                        const SizedBox(width: 10),
-                        Text(
-                          Formatters.currency(product.price),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: AppColors.textHint,
-                                  ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '-${product.discount.toStringAsFixed(0)}%',
-                            style: const TextStyle(
-                              color: AppColors.error,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      if (product.rating > 0) ...[
-                        const Icon(Icons.star_rounded,
-                            color: AppColors.warning, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${product.rating.toStringAsFixed(1)} (${product.totalReviews})',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(width: 16),
-                      ],
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
+                          horizontal: 8,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: product.inStock
-                              ? AppColors.success.withValues(alpha: 0.12)
-                              : AppColors.error.withValues(alpha: 0.12),
+                          color: AppColors.error.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          product.inStock
-                              ? 'In stock (${product.stock})'
-                              : 'Out of stock',
-                          style: TextStyle(
-                            color: product.inStock
-                                ? AppColors.success
-                                : AppColors.error,
-                            fontWeight: FontWeight.w600,
+                          '-${product.discount.toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
                             fontSize: 12,
                           ),
                         ),
                       ),
                     ],
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    if (product.rating > 0) ...[
+                      const Icon(
+                        Icons.star_rounded,
+                        color: AppColors.warning,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${product.rating.toStringAsFixed(1)} (${product.totalReviews})',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: product.inStock
+                            ? AppColors.success.withValues(alpha: 0.12)
+                            : AppColors.error.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        product.inStock
+                            ? 'In stock (${product.stock})'
+                            : 'Out of stock',
+                        style: TextStyle(
+                          color: product.inStock
+                              ? AppColors.success
+                              : AppColors.error,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Description',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  product.description.isEmpty
+                      ? 'No description available.'
+                      : product.description,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        height: 1.5,
+                      ),
+                ),
+                if (product.material != null ||
+                    product.size != null ||
+                    product.isCustomizable) ...[
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (product.material != null)
+                        Chip(label: Text('Material: ${product.material}')),
+                      if (product.size != null)
+                        Chip(label: Text('Size: ${product.size}')),
+                      if (product.isCustomizable)
+                        const Chip(
+                          avatar: Icon(Icons.palette_outlined, size: 16),
+                          label: Text('Customizable'),
+                        ),
+                    ],
                   ),
+                ],
+                if (product.colors.isNotEmpty) ...[
                   const SizedBox(height: 20),
                   Text(
-                    'Description',
+                    'Color',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: product.colors.map((color) {
+                      final selected = _selectedColor == color;
+                      return ChoiceChip(
+                        label: Text(color),
+                        selected: selected,
+                        onSelected: (_) =>
+                            setState(() => _selectedColor = color),
+                      );
+                    }).toList(),
+                  ),
+                ],
+                if (product.isCustomizable) ...[
+                  const SizedBox(height: 20),
                   Text(
-                    product.description.isEmpty
-                        ? 'No description available.'
-                        : product.description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          height: 1.5,
+                    'Customization',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                   ),
-                  if (product.material != null || product.size != null) ...[
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (product.material != null)
-                          Chip(label: Text('Material: ${product.material}')),
-                        if (product.size != null)
-                          Chip(label: Text('Size: ${product.size}')),
-                        if (product.isCustomizable)
-                          const Chip(
-                            avatar: Icon(Icons.palette_outlined, size: 16),
-                            label: Text('Customizable'),
-                          ),
-                      ],
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _customTextController,
+                    maxLength: 40,
+                    decoration: const InputDecoration(
+                      labelText: 'Custom text / name',
+                      hintText: 'e.g. Ali, Best Friends…',
                     ),
-                  ],
-                  if (product.colors.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Color',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: product.colors.map((color) {
-                        final selected = _selectedColor == color;
-                        return ChoiceChip(
-                          label: Text(color),
-                          selected: selected,
-                          onSelected: (_) =>
-                              setState(() => _selectedColor = color),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                  if (product.isCustomizable) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Customization',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _customTextController,
-                      maxLength: 40,
-                      decoration: const InputDecoration(
-                        labelText: 'Custom text / name',
-                        hintText: 'e.g. Ali, Best Friends…',
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Optional: upload a custom design image during a later update; text customization is saved with your cart item.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                  ),
+                ],
+                if (_reviews.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Text(
                     'Reviews',
@@ -447,15 +373,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                   ),
                   const SizedBox(height: 8),
-                  if (_reviews.isEmpty)
-                    Text(
-                      'No reviews yet.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    )
-                  else
-                    ..._reviews.map((r) => _ReviewTile(review: r)),
+                  ..._reviews.map((r) => _ReviewTile(review: r)),
                 ],
-              ),
+              ],
             ),
           ),
         ],
@@ -498,6 +418,123 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 }
 
+class _ProductImageGallery extends StatelessWidget {
+  const _ProductImageGallery({
+    required this.images,
+    required this.index,
+    required this.controller,
+    required this.onIndexChanged,
+  });
+
+  final List<String> images;
+  final int index;
+  final PageController controller;
+  final ValueChanged<int> onIndexChanged;
+
+  static const double _height = 360;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _height,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(
+            color: AppColors.surfaceMuted,
+            child: images.isEmpty
+                ? const _GalleryFallback()
+                : PageView.builder(
+                    controller: controller,
+                    itemCount: images.length,
+                    onPageChanged: onIndexChanged,
+                    itemBuilder: (context, i) {
+                      return CachedNetworkImage(
+                        imageUrl: images[i],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        placeholder: (context, url) =>
+                            const ColoredBox(color: AppColors.surfaceMuted),
+                        errorWidget: (context, url, error) =>
+                            const _GalleryFallback(),
+                      );
+                    },
+                  ),
+          ),
+          const IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black26,
+                    Colors.transparent,
+                    Colors.black45,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (images.length > 1)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(images.length, (i) {
+                  final selected = i == index;
+                  return GestureDetector(
+                    onTap: () {
+                      controller.animateToPage(
+                        i,
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOut,
+                      );
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: selected ? 22 : 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: selected
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.45),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GalleryFallback extends StatelessWidget {
+  const _GalleryFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: AppColors.surfaceMuted,
+      child: Center(
+        child: Icon(
+          Icons.key_rounded,
+          size: 72,
+          color: AppColors.primaryLight,
+        ),
+      ),
+    );
+  }
+}
+
 class _ReviewTile extends StatelessWidget {
   const _ReviewTile({required this.review});
 
@@ -524,8 +561,11 @@ class _ReviewTile extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               const Spacer(),
-              const Icon(Icons.star_rounded,
-                  size: 16, color: AppColors.warning),
+              const Icon(
+                Icons.star_rounded,
+                size: 16,
+                color: AppColors.warning,
+              ),
               Text(review.rating.toStringAsFixed(1)),
             ],
           ),
