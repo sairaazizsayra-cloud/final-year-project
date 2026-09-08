@@ -92,7 +92,7 @@ class FirestoreService {
     return ProductModel.fromFirestore(doc);
   }
 
-  Future<List<ProductModel>> getFeaturedProducts({int limit = 10}) async {
+  Future<List<ProductModel>> getFeaturedProducts({int limit = 50}) async {
     try {
       final snap = await _db
           .collection(AppConstants.productsCollection)
@@ -100,14 +100,16 @@ class FirestoreService {
           .where('isFeatured', isEqualTo: true)
           .limit(limit)
           .get();
-      return snap.docs.map(ProductModel.fromFirestore).toList();
+      final list = snap.docs.map(ProductModel.fromFirestore).toList();
+      if (list.isNotEmpty) return list;
     } catch (e) {
       logError('getFeaturedProducts', e);
-      return [];
     }
+    final all = await getActiveProducts(limit: 200);
+    return all.where((p) => p.isFeatured).take(limit).toList();
   }
 
-  Future<List<ProductModel>> getNewArrivals({int limit = 10}) async {
+  Future<List<ProductModel>> getNewArrivals({int limit = 50}) async {
     try {
       final snap = await _db
           .collection(AppConstants.productsCollection)
@@ -116,20 +118,28 @@ class FirestoreService {
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
-      return snap.docs.map(ProductModel.fromFirestore).toList();
+      final list = snap.docs.map(ProductModel.fromFirestore).toList();
+      if (list.isNotEmpty) return list;
     } catch (e) {
       logError('getNewArrivals ordered', e);
-      final snap = await _db
-          .collection(AppConstants.productsCollection)
-          .where('isActive', isEqualTo: true)
-          .where('isNewArrival', isEqualTo: true)
-          .limit(limit)
-          .get();
-      return snap.docs.map(ProductModel.fromFirestore).toList();
+      try {
+        final snap = await _db
+            .collection(AppConstants.productsCollection)
+            .where('isActive', isEqualTo: true)
+            .where('isNewArrival', isEqualTo: true)
+            .limit(limit)
+            .get();
+        final list = snap.docs.map(ProductModel.fromFirestore).toList();
+        if (list.isNotEmpty) return list;
+      } catch (e2) {
+        logError('getNewArrivals plain', e2);
+      }
     }
+    final all = await getActiveProducts(limit: 200);
+    return all.where((p) => p.isNewArrival).take(limit).toList();
   }
 
-  Future<List<ProductModel>> getBestSellers({int limit = 10}) async {
+  Future<List<ProductModel>> getBestSellers({int limit = 50}) async {
     try {
       final snap = await _db
           .collection(AppConstants.productsCollection)
@@ -137,24 +147,32 @@ class FirestoreService {
           .where('isBestSeller', isEqualTo: true)
           .limit(limit)
           .get();
-      return snap.docs.map(ProductModel.fromFirestore).toList();
+      final list = snap.docs.map(ProductModel.fromFirestore).toList();
+      if (list.isNotEmpty) return list;
     } catch (e) {
       logError('getBestSellers', e);
-      return [];
     }
+    final all = await getActiveProducts(limit: 200);
+    return all.where((p) => p.isBestSeller).take(limit).toList();
   }
 
   Future<List<ProductModel>> getProductsByCategory(
     String categoryId, {
-    int limit = 20,
+    int limit = 100,
   }) async {
-    final snap = await _db
-        .collection(AppConstants.productsCollection)
-        .where('isActive', isEqualTo: true)
-        .where('categoryId', isEqualTo: categoryId)
-        .limit(limit)
-        .get();
-    return snap.docs.map(ProductModel.fromFirestore).toList();
+    try {
+      final snap = await _db
+          .collection(AppConstants.productsCollection)
+          .where('isActive', isEqualTo: true)
+          .where('categoryId', isEqualTo: categoryId)
+          .limit(limit)
+          .get();
+      return snap.docs.map(ProductModel.fromFirestore).toList();
+    } catch (e) {
+      logError('getProductsByCategory', e);
+      final all = await getActiveProducts(limit: 200);
+      return all.where((p) => p.categoryId == categoryId).take(limit).toList();
+    }
   }
 
   Future<List<ProductModel>> searchProducts(String query) async {
@@ -189,7 +207,7 @@ class FirestoreService {
         .toList();
   }
 
-  Future<List<ProductModel>> getActiveProducts({int limit = 100}) async {
+  Future<List<ProductModel>> getActiveProducts({int limit = 200}) async {
     try {
       final snap = await _db
           .collection(AppConstants.productsCollection)
@@ -209,8 +227,8 @@ class FirestoreService {
     }
   }
 
-  Future<List<ProductModel>> getDiscountedProducts({int limit = 30}) async {
-    final products = await getActiveProducts(limit: 80);
+  Future<List<ProductModel>> getDiscountedProducts({int limit = 100}) async {
+    final products = await getActiveProducts(limit: 200);
     final discounted = products.where((p) => p.hasDiscount).toList()
       ..sort((a, b) => b.discount.compareTo(a.discount));
     return discounted.take(limit).toList();

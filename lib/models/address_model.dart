@@ -38,7 +38,7 @@ class AddressModel {
       area: map['area'] as String? ?? '',
       city: map['city'] as String? ?? '',
       postalCode: map['postalCode'] as String? ?? '',
-      isDefault: map['isDefault'] as bool? ?? false,
+      isDefault: map['isDefault'] == true,
       createdAt: _parseTimestamp(map['createdAt']),
     );
   }

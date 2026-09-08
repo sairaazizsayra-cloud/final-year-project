@@ -6,6 +6,7 @@ import 'package:keychain_shop/router/app_router.dart';
 import 'package:keychain_shop/services/firestore_service.dart';
 import 'package:keychain_shop/theme/app_theme.dart';
 import 'package:keychain_shop/utils/product_filters.dart';
+import 'package:keychain_shop/widgets/product_card.dart';
 import 'package:keychain_shop/widgets/product_grid.dart';
 
 /// Filtered product listing (category / section / sort).
@@ -26,6 +27,8 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
+  static const _catalogLimit = 200;
+
   List<ProductModel> _all = [];
   List<ProductModel> _visible = [];
   late ProductFilters _filters;
@@ -42,6 +45,43 @@ class _ProductListScreenState extends State<ProductListScreen> {
     _load();
   }
 
+  @override
+  void didUpdateWidget(covariant ProductListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.section != widget.section ||
+        oldWidget.categoryId != widget.categoryId) {
+      _filters = ProductFilters(
+        categoryId: widget.categoryId,
+        section: widget.section,
+      );
+      _load();
+    }
+  }
+
+  Future<List<ProductModel>> _fetchForSection(
+    FirestoreService firestore,
+  ) async {
+    if (widget.categoryId != null && widget.categoryId!.isNotEmpty) {
+      return firestore.getProductsByCategory(
+        widget.categoryId!,
+        limit: _catalogLimit,
+      );
+    }
+
+    switch (widget.section) {
+      case ProductSection.featured:
+        return firestore.getFeaturedProducts(limit: _catalogLimit);
+      case ProductSection.newArrival:
+        return firestore.getNewArrivals(limit: _catalogLimit);
+      case ProductSection.bestSeller:
+        return firestore.getBestSellers(limit: _catalogLimit);
+      case ProductSection.discount:
+        return firestore.getDiscountedProducts(limit: _catalogLimit);
+      case ProductSection.all:
+        return firestore.getActiveProducts(limit: _catalogLimit);
+    }
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -50,21 +90,32 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
     try {
       final firestore = context.read<FirestoreService>();
-      List<ProductModel> products;
+      // Always pull the full active catalog as a base, then apply the section
+      // client-side so every chip shows the correct subset (not a tiny shared list).
+      final catalog = await firestore.getActiveProducts(limit: _catalogLimit);
+      var products = await _fetchForSection(firestore);
 
-      if (widget.categoryId != null && widget.categoryId!.isNotEmpty) {
-        products = await firestore.getProductsByCategory(
-          widget.categoryId!,
-          limit: 80,
-        );
-      } else {
-        products = await firestore.getActiveProducts(limit: 100);
+      // If a section query fails / returns empty while catalog has matches, use
+      // client-side filter so Featured/New/Best/Discount still work.
+      if (products.isEmpty && catalog.isNotEmpty) {
+        products = ProductFilters(section: widget.section).apply(catalog);
       }
+
+      // Keep full catalog for material filter chips; visible list is sectioned.
+      final baseForFilters = catalog.isNotEmpty ? catalog : products;
 
       if (!mounted) return;
       setState(() {
-        _all = products;
-        _visible = _filters.apply(_all);
+        _all = baseForFilters;
+        _filters = ProductFilters(
+          categoryId: widget.categoryId,
+          section: widget.section,
+        );
+        _visible = _filters.apply(
+          widget.categoryId != null && widget.categoryId!.isNotEmpty
+              ? products
+              : baseForFilters,
+        );
         _loading = false;
       });
     } catch (e) {
@@ -136,27 +187,65 @@ class _ProductListScreenState extends State<ProductListScreen> {
           : RefreshIndicator(
               color: AppColors.primary,
               onRefresh: _load,
-              child: ListView(
+              child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: [
+                slivers: [
                   if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(_error!, textAlign: TextAlign.center),
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text(_error!, textAlign: TextAlign.center),
+                        ),
+                      ),
                     )
                   else ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                      child: Text(
-                        '${_visible.length} product${_visible.length == 1 ? '' : 's'}',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                        child: Text(
+                          '${_visible.length} product${_visible.length == 1 ? '' : 's'}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                       ),
                     ),
-                    ProductGrid(
-                      products: _visible,
-                      emptyMessage:
-                          'No products match these filters. Try adjusting filters or check back later.',
-                    ),
+                    if (_visible.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              'No products in ${ProductFilters.sectionLabel(widget.section).toLowerCase()} yet.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.60,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              return ProductCard(
+                                product: _visible[index],
+                                width: double.infinity,
+                              );
+                            },
+                            childCount: _visible.length,
+                          ),
+                        ),
+                      ),
                   ],
                 ],
               ),

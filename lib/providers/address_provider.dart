@@ -58,8 +58,40 @@ class AddressProvider extends ChangeNotifier {
         _loading = false;
         _error = 'Could not load addresses.';
         notifyListeners();
+        // One-shot fallback if the live query fails (e.g. transient rules/index).
+        unawaited(_reloadOnce(userId));
       },
     );
+  }
+
+  Future<void> _reloadOnce(String userId) async {
+    try {
+      final list = await _firestore.getUserAddresses(userId);
+      if (_userId != userId) return;
+      _addresses = list;
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[AddressProvider] fallback load failed: $e');
+    }
+  }
+
+  /// Forces a refresh — useful before checkout place-order.
+  Future<void> refresh() async {
+    final uid = _userId;
+    if (uid == null) return;
+    _loading = true;
+    notifyListeners();
+    try {
+      _addresses = await _firestore.getUserAddresses(uid);
+      _error = null;
+    } catch (e) {
+      debugPrint('[AddressProvider] refresh failed: $e');
+      _error = 'Could not load addresses.';
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 
   Future<bool> save(AddressModel address) async {

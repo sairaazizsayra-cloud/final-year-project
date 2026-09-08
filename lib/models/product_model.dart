@@ -71,13 +71,13 @@ class ProductModel {
       material: map['material'] as String?,
       size: map['size'] as String?,
       colors: List<String>.from(map['colors'] as List? ?? const []),
-      isCustomizable: map['isCustomizable'] as bool? ?? false,
+      isCustomizable: map['isCustomizable'] == true,
       rating: (map['rating'] as num?)?.toDouble() ?? 0,
       totalReviews: (map['totalReviews'] as num?)?.toInt() ?? 0,
-      isFeatured: map['isFeatured'] as bool? ?? false,
-      isBestSeller: map['isBestSeller'] as bool? ?? false,
-      isNewArrival: map['isNewArrival'] as bool? ?? false,
-      isActive: map['isActive'] as bool? ?? true,
+      isFeatured: map['isFeatured'] == true,
+      isBestSeller: map['isBestSeller'] == true,
+      isNewArrival: map['isNewArrival'] == true,
+      isActive: map['isActive'] != false,
       createdAt: _parseTimestamp(map['createdAt']),
       updatedAt: map['updatedAt'] != null
           ? _parseTimestamp(map['updatedAt'])

@@ -51,20 +51,20 @@ class _HomeScreenState extends State<HomeScreen> {
         debugPrint('[HomeScreen] categories: $e');
         return <CategoryModel>[];
       });
-      final featured = await firestore.getFeaturedProducts().catchError((e) {
+      final featured = await firestore.getFeaturedProducts(limit: 20).catchError((e) {
         debugPrint('[HomeScreen] featured: $e');
         return <ProductModel>[];
       });
-      final newArrivals = await firestore.getNewArrivals().catchError((e) {
+      final newArrivals = await firestore.getNewArrivals(limit: 20).catchError((e) {
         debugPrint('[HomeScreen] newArrivals: $e');
         return <ProductModel>[];
       });
-      final bestSellers = await firestore.getBestSellers().catchError((e) {
+      final bestSellers = await firestore.getBestSellers(limit: 20).catchError((e) {
         debugPrint('[HomeScreen] bestSellers: $e');
         return <ProductModel>[];
       });
       final allProducts =
-          await firestore.getActiveProducts(limit: 40).catchError((e) {
+          await firestore.getActiveProducts(limit: 200).catchError((e) {
         debugPrint('[HomeScreen] products: $e');
         return <ProductModel>[];
       });
@@ -83,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _featured = featured;
         _newArrivals = newArrivals;
         _bestSellers = bestSellers;
-        _discounted = discounted.take(10).toList();
+        _discounted = discounted.take(20).toList();
         _loading = false;
         _error = hasAny
             ? null

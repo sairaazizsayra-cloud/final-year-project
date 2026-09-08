@@ -88,17 +88,15 @@ class ProductFilters {
       list = list.where((p) => p.categoryId == categoryId).toList();
     }
 
-    switch (section) {
-      case ProductSection.featured:
-        list = list.where((p) => p.isFeatured).toList();
-      case ProductSection.newArrival:
-        list = list.where((p) => p.isNewArrival).toList();
-      case ProductSection.bestSeller:
-        list = list.where((p) => p.isBestSeller).toList();
-      case ProductSection.discount:
-        list = list.where((p) => p.hasDiscount).toList();
-      case ProductSection.all:
-        break;
+    // Explicit branches — do not stack filters across sections.
+    if (section == ProductSection.featured) {
+      list = list.where((p) => p.isFeatured).toList();
+    } else if (section == ProductSection.newArrival) {
+      list = list.where((p) => p.isNewArrival).toList();
+    } else if (section == ProductSection.bestSeller) {
+      list = list.where((p) => p.isBestSeller).toList();
+    } else if (section == ProductSection.discount) {
+      list = list.where((p) => p.hasDiscount).toList();
     }
 
     if (minPrice != null) {
@@ -136,17 +134,16 @@ class ProductFilters {
           .toList();
     }
 
-    switch (sort) {
-      case ProductSort.newest:
-        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      case ProductSort.priceLowHigh:
-        list.sort((a, b) => a.discountedPrice.compareTo(b.discountedPrice));
-      case ProductSort.priceHighLow:
-        list.sort((a, b) => b.discountedPrice.compareTo(a.discountedPrice));
-      case ProductSort.rating:
-        list.sort((a, b) => b.rating.compareTo(a.rating));
-      case ProductSort.discount:
-        list.sort((a, b) => b.discount.compareTo(a.discount));
+    if (sort == ProductSort.newest) {
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else if (sort == ProductSort.priceLowHigh) {
+      list.sort((a, b) => a.discountedPrice.compareTo(b.discountedPrice));
+    } else if (sort == ProductSort.priceHighLow) {
+      list.sort((a, b) => b.discountedPrice.compareTo(a.discountedPrice));
+    } else if (sort == ProductSort.rating) {
+      list.sort((a, b) => b.rating.compareTo(a.rating));
+    } else if (sort == ProductSort.discount) {
+      list.sort((a, b) => b.discount.compareTo(a.discount));
     }
 
     return list;

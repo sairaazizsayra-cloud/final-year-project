@@ -173,7 +173,7 @@ class _AppViewState extends State<_AppView> {
   void initState() {
     super.initState();
     widget.auth.addListener(_syncFcmTokenIfNeeded);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) { 
       if (!mounted) return;
       if (!_fcmReady) {
         _fcmReady = true;

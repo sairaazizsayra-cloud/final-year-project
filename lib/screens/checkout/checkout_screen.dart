@@ -29,23 +29,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _couponController = TextEditingController();
   bool _placing = false;
   bool _applyingCoupon = false;
+  AddressProvider? _addressProvider;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final def = context.read<AddressProvider>().defaultAddress;
-      if (def != null && mounted) {
-        setState(() => _selectedAddress = def);
-      }
+      if (!mounted) return;
+      _addressProvider = context.read<AddressProvider>();
+      _addressProvider!.addListener(_syncSelectedAddress);
+      _syncSelectedAddress();
     });
   }
 
   @override
   void dispose() {
+    _addressProvider?.removeListener(_syncSelectedAddress);
     _notesController.dispose();
     _couponController.dispose();
     super.dispose();
+  }
+
+  void _syncSelectedAddress() {
+    if (!mounted) return;
+    final provider = _addressProvider ?? context.read<AddressProvider>();
+    final def = provider.defaultAddress;
+    if (_selectedAddress == null && def != null) {
+      setState(() => _selectedAddress = def);
+      return;
+    }
+    // Keep selection if still in the list; otherwise fall back to default.
+    if (_selectedAddress != null &&
+        provider.addresses.isNotEmpty &&
+        !provider.addresses.any((a) => a.id == _selectedAddress!.id)) {
+      setState(() => _selectedAddress = def);
+    }
   }
 
   Future<void> _applyCoupon() async {
@@ -88,13 +106,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  Future<void> _pickAddress() async {
+  Future<AddressModel?> _pickAddress() async {
     final result = await context.pushOverlay<AddressModel>(
       '/addresses?select=1',
     );
     if (result != null && mounted) {
       setState(() => _selectedAddress = result);
     }
+    return result;
+  }
+
+  Future<AddressModel?> _resolveDeliveryAddress() async {
+    final addressProvider = context.read<AddressProvider>();
+
+    var delivery =
+        _selectedAddress ?? addressProvider.defaultAddress;
+    if (delivery != null) return delivery;
+
+    if (addressProvider.isLoading) {
+      await addressProvider.refresh();
+      if (!mounted) return null;
+      delivery = _selectedAddress ?? addressProvider.defaultAddress;
+      if (delivery != null) {
+        setState(() => _selectedAddress = delivery);
+        return delivery;
+      }
+    } else if (addressProvider.addresses.isEmpty) {
+      await addressProvider.refresh();
+      if (!mounted) return null;
+      delivery = addressProvider.defaultAddress;
+      if (delivery != null) {
+        setState(() => _selectedAddress = delivery);
+        return delivery;
+      }
+    }
+
+    // Open picker / add flow instead of only showing a snackbar.
+    final picked = await _pickAddress();
+    if (!mounted) return null;
+    return picked ?? _selectedAddress ?? addressProvider.defaultAddress;
   }
 
   Future<void> _placeOrder() async {
@@ -116,12 +166,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    final deliveryAddress =
-        _selectedAddress ?? context.read<AddressProvider>().defaultAddress;
+    final deliveryAddress = await _resolveDeliveryAddress();
+    if (!mounted) return;
 
     if (deliveryAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a delivery address.')),
+        const SnackBar(
+          content: Text('Add a delivery address to continue.'),
+        ),
       );
       return;
     }
@@ -137,6 +189,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final discount = cart.discount;
       final total = cart.total;
       final estimated = DateTime.now().add(const Duration(days: 3));
+
+      final isOnline = _paymentMethod == AppConstants.paymentOnline;
 
       final draft = OrderModel(
         id: '',
@@ -163,14 +217,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       final orderId = await firestore.createOrder(draft);
 
-      if (_paymentMethod == AppConstants.paymentOnline) {
+      if (isOnline) {
         final pay = await paymentService.initiateOnlinePayment(
           orderId: orderId,
           amount: total,
           userId: user.id,
         );
         if (!pay.success) {
-          // Keep order pending but ask user to use COD — do not fake success.
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(pay.message)),
@@ -235,39 +288,59 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(
+                  color: selectedAddress == null
+                      ? AppColors.primary
+                      : AppColors.border,
+                ),
                 color: AppColors.surface,
               ),
-              child: selectedAddress == null
+              child: addressProvider.isLoading && selectedAddress == null
                   ? const Row(
                       children: [
-                        Icon(Icons.add_location_alt_outlined,
-                            color: AppColors.primary),
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                         SizedBox(width: 10),
-                        Text('Add / select home address'),
+                        Text('Loading addresses…'),
                       ],
                     )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          selectedAddress.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                  : selectedAddress == null
+                      ? const Row(
+                          children: [
+                            Icon(Icons.add_location_alt_outlined,
+                                color: AppColors.primary),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Tap to add / select delivery address',
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selectedAddress.fullName,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(selectedAddress.phone),
+                            const SizedBox(height: 4),
+                            Text(selectedAddress.formattedAddress),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Change',
+                              style: TextStyle(
+                                color: AppColors.primaryDark,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(selectedAddress.phone),
-                        const SizedBox(height: 4),
-                        Text(selectedAddress.formattedAddress),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Change',
-                          style: TextStyle(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
             ),
           ),
           const SizedBox(height: 24),
@@ -289,7 +362,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           _PaymentTile(
             title: 'Online Payment',
             subtitle:
-                'Secure gateway via Cloud Functions (configure gateway to enable).',
+                'Secure checkout. Uses demo mode until the payment gateway is configured.',
             value: AppConstants.paymentOnline,
             groupValue: _paymentMethod,
             onChanged: (v) => setState(() => _paymentMethod = v),
