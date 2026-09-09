@@ -74,6 +74,30 @@ function map(fields) {
   return { mapValue: { fields } };
 }
 
+/** Real keychain / keys photos (Unsplash), cropped square. */
+function keychainPhoto(index) {
+  const photos = [
+    'photo-1727154085760-134cc942246e',
+    'photo-1674660638936-c0005c862a0d',
+    'photo-1676276550349-580c49631496',
+    'photo-1611006294560-1fab7641e0a3',
+    'photo-1687363714985-990685339050',
+    'photo-1595944356863-e624f8234e1e',
+    'photo-1603508102977-02688e3265fd',
+    'photo-1714631281605-a849ba8e90b5',
+    'photo-1741254720220-5fec5d24b546',
+    'photo-1624505474107-840f25fbfb96',
+    'photo-1575908539614-ff89490f4a78',
+    'photo-1698423955414-fee71b18e0b6',
+    'photo-1748273734249-604fc3a72b88',
+    'photo-1678929480581-d8e55cda190b',
+    'photo-1675582090584-4ae9400f7326',
+    'photo-1582139329536-e7284fece509',
+  ];
+  const id = photos[Math.abs(index) % photos.length];
+  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=600&h=600&q=80`;
+}
+
 async function signUpOrSignIn(email, password) {
   const signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`;
   let res = await fetch(signUpUrl, {
@@ -185,7 +209,7 @@ async function main() {
       {
         name: str(c.name),
         description: str(c.description),
-        imageUrl: str(`https://picsum.photos/seed/${c.id}/400/400`),
+        imageUrl: str(keychainPhoto(c.sortOrder)),
         sortOrder: int(c.sortOrder),
         isActive: bool(true),
         createdAt: ts(),
@@ -483,8 +507,8 @@ async function main() {
         discount: num(p.discount),
         stock: int(p.stock),
         images: arr([
-          str(`https://picsum.photos/seed/${p.id}/600/600`),
-          str(`https://picsum.photos/seed/${p.id}b/600/600`),
+          str(keychainPhoto(products.indexOf(p))),
+          str(keychainPhoto(products.indexOf(p) + 7)),
         ]),
         material: str(p.material),
         size: str('Standard'),
@@ -561,7 +585,7 @@ async function main() {
     {
       title: str('Home-to-Home Delivery'),
       subtitle: str('Custom keychains delivered to your door'),
-      imageUrl: str('https://picsum.photos/seed/banner1/1200/500'),
+      imageUrl: str(keychainPhoto(0).replace('w=600&h=600', 'w=1200&h=500')),
       link: str('/browse'),
       sortOrder: int(1),
       isActive: bool(true),
@@ -574,7 +598,7 @@ async function main() {
     {
       title: str('Personalized Gifts'),
       subtitle: str('Engrave names & upload photos'),
-      imageUrl: str('https://picsum.photos/seed/banner2/1200/500'),
+      imageUrl: str(keychainPhoto(2).replace('w=600&h=600', 'w=1200&h=500')),
       link: str('/products'),
       sortOrder: int(2),
       isActive: bool(true),
@@ -645,7 +669,7 @@ async function main() {
         map({
           productId: str('prod_brass_classic'),
           productName: str('Classic Brass Keychain'),
-          productImage: str('https://picsum.photos/seed/prod_brass_classic/600/600'),
+          productImage: str(keychainPhoto(0)),
           price: num(450),
           discount: num(0),
           unitPrice: num(450),
@@ -699,7 +723,7 @@ async function main() {
         map({
           productId: str('prod_acrylic_heart'),
           productName: str('Acrylic Heart Charm'),
-          productImage: str('https://picsum.photos/seed/prod_acrylic_heart/600/600'),
+          productImage: str(keychainPhoto(2)),
           price: num(299),
           discount: num(15),
           unitPrice: num(254.15),

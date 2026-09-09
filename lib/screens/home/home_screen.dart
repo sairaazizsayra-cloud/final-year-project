@@ -347,9 +347,8 @@ class _PromoBanner extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.go('/browse'),
       child: Container(
-        height: 156,
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.lg),
           gradient: const LinearGradient(
@@ -368,23 +367,29 @@ class _PromoBanner extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'Home-to-Home Delivery',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
+                          height: 1.2,
                         ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     'Custom keychains delivered to your doorstep.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
+                          height: 1.3,
                         ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -406,7 +411,8 @@ class _PromoBanner extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.key_rounded, color: Colors.white24, size: 72),
+            const SizedBox(width: 8),
+            const Icon(Icons.key_rounded, color: Colors.white24, size: 56),
           ],
         ),
       ),

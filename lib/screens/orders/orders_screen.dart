@@ -51,6 +51,7 @@ class OrdersScreen extends StatelessWidget {
                   _OrdersList(
                     orders: orders.cancelled,
                     emptyMessage: 'No cancelled orders.',
+                    allowDelete: true,
                   ),
                 ],
               ),
@@ -63,10 +64,48 @@ class _OrdersList extends StatelessWidget {
   const _OrdersList({
     required this.orders,
     required this.emptyMessage,
+    this.allowDelete = false,
   });
 
   final List<OrderModel> orders;
   final String emptyMessage;
+  final bool allowDelete;
+
+  Future<void> _confirmDelete(BuildContext context, OrderModel order) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete cancelled order?'),
+        content: const Text(
+          'This removes the order from your history. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+
+    final provider = context.read<OrdersProvider>();
+    final success = await provider.deleteCancelledOrder(order.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Cancelled order removed.'
+              : (provider.error ?? 'Could not delete order.'),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +169,23 @@ class _OrdersList extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (allowDelete) ...[
+                      const SizedBox(width: 4),
+                      IconButton(
+                        tooltip: 'Delete',
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: AppColors.error,
+                        ),
+                        onPressed: () => _confirmDelete(context, order),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),

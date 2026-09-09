@@ -137,7 +137,10 @@ service cloud.firestore {
                         && request.resource.data.diff(resource.data).affectedKeys()
                             .hasOnly(['orderStatus', 'updatedAt', 'statusHistory']));
 
-      allow delete: if false;
+      // Customers may remove cancelled orders from their history.
+      allow delete: if isAdmin()
+                    || (isOwner(resource.data.userId)
+                        && resource.data.orderStatus == 'cancelled');
     }
 
     // ── Order items (optional denormalized collection) ───

@@ -251,6 +251,55 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   },
                 ),
               ],
+              if (order.isCancelled) ...[
+                const SizedBox(height: 24),
+                AppButton(
+                  label: 'Delete from history',
+                  isOutlined: true,
+                  isLoading: ordersProvider.isMutating,
+                  onPressed: () async {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete cancelled order?'),
+                        content: const Text(
+                          'This removes the order from your history. This cannot be undone.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Keep'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok != true || !context.mounted) return;
+                    final success =
+                        await ordersProvider.deleteCancelledOrder(order.id);
+                    if (!context.mounted) return;
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Cancelled order removed.'),
+                        ),
+                      );
+                      Navigator.of(context).pop();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            ordersProvider.error ?? 'Could not delete order.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
             ],
           ),
         );

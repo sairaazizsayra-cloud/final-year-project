@@ -81,6 +81,25 @@ class OrdersProvider extends ChangeNotifier {
     }
   }
 
+  /// Permanently removes a cancelled order from the list / Firestore.
+  Future<bool> deleteCancelledOrder(String orderId) async {
+    _mutating = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _firestore.deleteCancelledOrder(orderId);
+      _mutating = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('[OrdersProvider] delete cancelled failed: $e');
+      _error = 'Could not delete order. Only cancelled orders can be removed.';
+      _mutating = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   OrderModel? findById(String orderId) {
     try {
       return _orders.firstWhere((o) => o.id == orderId);

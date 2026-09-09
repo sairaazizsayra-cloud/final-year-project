@@ -575,6 +575,21 @@ class FirestoreService {
     });
   }
 
+  /// Removes a cancelled order from the customer's history (rules enforce status).
+  Future<void> deleteCancelledOrder(String orderId) async {
+    final ref = _db.collection(AppConstants.ordersCollection).doc(orderId);
+    final snap = await ref.get();
+    if (!snap.exists) {
+      throw StateError('Order not found.');
+    }
+    final status = snap.data()?['orderStatus'] as String?;
+    if (status != AppConstants.orderCancelled) {
+      throw StateError('Only cancelled orders can be deleted.');
+    }
+    await ref.delete();
+    debugPrint('[FirestoreService] Deleted cancelled order: $orderId');
+  }
+
   // ── Deliveries ─────────────────────────────────────────
 
   Future<DeliveryModel?> getDeliveryByOrderId(String orderId) async {
